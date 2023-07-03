@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+	"dockerfile_builder",
+	"dockerfile_derive",
+]
