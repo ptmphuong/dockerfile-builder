@@ -2,6 +2,8 @@ This library provides a convenient way to programmatically generate Dockerfiles 
 
 Dockerfiles instructions can be generated using structured and type-safe interfaces, or they can be added flexibly in raw form.
 
+This library is actively developed and will be published to crates.io once features are complete.
+
 # Quickstart
 
 ```toml
