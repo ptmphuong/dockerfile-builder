@@ -10,7 +10,7 @@ pub fn instruction_init(input: TokenStream) -> TokenStream {
 
     let variants = match input.data {
         syn::Data::Enum(syn::DataEnum { ref variants, .. }, .. ) => variants,
-        _ => return err(&input.ident, "Expected Enum").into(),
+        _ => return make_err(&input.ident, "Expected Enum").into(),
     };
 
     let impl_display = variants.iter().map(|v| {
@@ -116,7 +116,7 @@ pub fn instruction_builder(input: TokenStream) -> TokenStream {
             fields: syn::Fields::Named(syn::FieldsNamed { ref named, .. }),
             ..
         }) => named,
-        _ => return err(struct_ident, "Expected Struct with named fields").into(),
+        _ => return make_err(struct_ident, "Expected Struct with named fields").into(),
     };
 
     let builder_empty = fields.iter().map(|f| {
@@ -129,7 +129,7 @@ pub fn instruction_builder(input: TokenStream) -> TokenStream {
         let name = &f.ident;
         let ty = &f.ty;
         if inner_type("Option", ty).is_some() {
-            quote! { #name: #ty }
+            quote! { #name: #ty, }
         } else {
             quote! { #name: std::option::Option<#ty>, }
         }
@@ -200,7 +200,7 @@ pub fn instruction_builder(input: TokenStream) -> TokenStream {
 
             pub fn build(&mut self) -> std::result::Result<#instruction_name, std::boxed::Box<dyn std::error::Error>> {
                 let instruction_builder = self.check_build()?;
-                let value = instruction_builder.#value_method();
+                let value = instruction_builder.#value_method()?;
                 Ok(
                     #instruction_name {
                         value,
@@ -240,7 +240,7 @@ fn is_type(ty_name: &str, ty: &syn::Type) -> bool {
     false
 }
 
-fn err<T: quote::ToTokens>(t: T, msg: &str) -> proc_macro2::TokenStream {
+fn make_err<T: quote::ToTokens>(t: T, msg: &str) -> proc_macro2::TokenStream {
     syn::Error::new_spanned(t, msg).to_compile_error()
 }
 
@@ -257,7 +257,7 @@ const EXPECT_ATTR_TEMPLATE: &str = r#"Expected
 
 fn get_attr(attr: &Vec<syn::Attribute>, struct_ident: &syn::Ident) -> Result<AttrData, proc_macro2::TokenStream> {
     if attr.len() != 1 {
-        return Err(err(struct_ident, EXPECT_ATTR_TEMPLATE));
+        return Err(make_err(struct_ident, EXPECT_ATTR_TEMPLATE));
     }
 
     if let syn::Meta::List( ref metalist ) = &attr[0].meta {
@@ -268,7 +268,7 @@ fn get_attr(attr: &Vec<syn::Attribute>, struct_ident: &syn::Ident) -> Result<Att
 
         let instruction_name = match tokenstream.next() {
             Some(TokenTree::Ident(ref i)) => i.clone(),
-            _ => return Err(err(metalist, EXPECT_ATTR_TEMPLATE)),
+            _ => return Err(make_err(metalist, EXPECT_ATTR_TEMPLATE)),
         };
 
         verify_attr_punct(tokenstream.next(), ',', metalist)?;
@@ -277,12 +277,12 @@ fn get_attr(attr: &Vec<syn::Attribute>, struct_ident: &syn::Ident) -> Result<Att
 
         let value_method = match tokenstream.next() {
             Some(TokenTree::Ident(ref i)) => i.clone(),
-            _ => return Err(err(metalist, EXPECT_ATTR_TEMPLATE)),
+            _ => return Err(make_err(metalist, EXPECT_ATTR_TEMPLATE)),
         };
 
         Ok(AttrData { instruction_name, value_method })
     } else {
-        return Err(err(struct_ident, EXPECT_ATTR_TEMPLATE));
+        return Err(make_err(struct_ident, EXPECT_ATTR_TEMPLATE));
     }
 }
 
@@ -290,10 +290,10 @@ fn verify_attr_ident<T: quote::ToTokens>(token: Option<TokenTree>, expected_iden
     match token {
         Some(TokenTree::Ident(ref i)) => {
             if i != expected_ident {
-                return Err(err(span, EXPECT_ATTR_TEMPLATE));
+                return Err(make_err(span, EXPECT_ATTR_TEMPLATE));
             }
         },
-        _ => return Err(err(span, EXPECT_ATTR_TEMPLATE)),
+        _ => return Err(make_err(span, EXPECT_ATTR_TEMPLATE)),
 
     }
     Ok(())
@@ -303,10 +303,10 @@ fn verify_attr_punct<T: quote::ToTokens>(token: Option<TokenTree>, expected_punc
     match token {
         Some(TokenTree::Punct(ref p)) => {
             if p.as_char() != expected_punct {
-                return Err(err(span, EXPECT_ATTR_TEMPLATE));
+                return Err(make_err(span, EXPECT_ATTR_TEMPLATE));
             }
         },
-        _ => return Err(err(span, EXPECT_ATTR_TEMPLATE)),
+        _ => return Err(make_err(span, EXPECT_ATTR_TEMPLATE)),
 
     }
     Ok(())
