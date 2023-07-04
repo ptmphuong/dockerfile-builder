@@ -32,7 +32,7 @@
 //!
 //! ## Dockerfile Instructions
 //!
-//! [Instruction] can be created from literals or from [Instruction Builders].
+//! [Instruction] can be created from String or from [Instruction Builder].
 //!
 //! Instruction Builders provide structured and type-safe interfaces to build instructions.
 //!
@@ -142,6 +142,5 @@ mod tests {
 
         let expected = expect!["EXPOSE 80/tcp"];
         expected.assert_eq(&dockerfile.to_string());
-
     }
 }
