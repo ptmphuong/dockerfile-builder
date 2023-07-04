@@ -1,7 +1,45 @@
+//! # Type-safe interfaces for building Instructions
+//!
+//!
+//! This module provides the definition of Instruction Builders and their fields.
+//!
+//!
+//! ## Usage
+//!
+//! All build and setter methods are automatically generated following these formats: 
+//! * The setter method names are identical to the fields names. 
+//! * The argument types of the setter methods are the same as the field types unless the
+//! field type is `Option<...>`. 
+//! * If the field type is `Option<...>`, the argument type is the inner type of `Option`.
+//! * Once all fields are set as desired, use `build()` to build the Instruction. `build()` returns
+//! `Result<InstructionBuilder, std::err::Err>` to safely handle errors.
+//!
+//! ## Example 
+//!
+//! `ExposeBuilder` is the builder struct for `Expose`.
+//!
+//! ```rust
+//! pub struct ExposeBuilder {
+//!     pub port: u16,
+//!     pub proto: Option<String>,
+//! }
+//! ```
+//!
+//! `Expose` can be constructed as follow:
+//!
+//! ```rust
+//! use dockerfile_builder::instruction_builder::ExposeBuilder;
+//! let expose = ExposeBuilder::builder()
+//!     .port(80)
+//!     .proto("tcp")
+//!     .build()
+//!     .unwrap();
+//! ```
 
 use crate::instruction::{From, Arg, Run, Expose};
 use dockerfile_derive::InstructionBuilder;
 
+/// Builder struct for `From` instruction
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
     instruction_name = From, 
@@ -41,6 +79,7 @@ impl FromBuilder {
     }
 }
 
+/// Builder struct for `Run` instruction
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
     instruction_name = Run, 
@@ -58,6 +97,7 @@ impl RunBuilder {
     }
 }
 
+/// Builder struct for `Arg` instruction
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
     instruction_name = Arg,
@@ -78,6 +118,7 @@ impl ArgBuilder {
     }
 }
 
+/// Builder struct for `Expose` instruction
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
     instruction_name = Expose,
