@@ -256,11 +256,12 @@ const EXPECT_ATTR_TEMPLATE: &str = r#"Expected
 )]"#;
 
 fn get_attr(attr: &Vec<syn::Attribute>, struct_ident: &syn::Ident) -> Result<AttrData, proc_macro2::TokenStream> {
-    if attr.len() != 1 {
+    if attr.is_empty() {
         return Err(make_err(struct_ident, EXPECT_ATTR_TEMPLATE));
     }
 
-    if let syn::Meta::List( ref metalist ) = &attr[0].meta {
+    // first attr can be doc
+    if let syn::Meta::List( ref metalist ) = &attr[attr.len() - 1].meta {
         let tokenstream = &mut metalist.tokens.clone().into_iter();
 
         verify_attr_ident(tokenstream.next(), "instruction_name", metalist)?;
