@@ -36,8 +36,6 @@
 //!     .unwrap();
 //! ```
 
-use std::collections::HashMap;
-
 use crate::instruction::{From, Env, Arg, Run, Expose};
 use dockerfile_derive::InstructionBuilder;
 
@@ -89,18 +87,15 @@ impl FromBuilder {
     value_method = value,
 )]
 pub struct EnvBuilder {
-    pub env_map: HashMap<String, String>,
+    pub key: String,
+    pub value: String,
 }
 
 impl EnvBuilder {
     fn value(&self) -> Result<String, String> {
         Ok(format!(
-            "{}",
-            self.env_map
-                .iter()
-                .map(|(k, v)| format!("{}={}", k, v))
-                .collect::<Vec<String>>()
-                .join(" ")
+            "{}={}",
+            self.key, self.value
         ))
     }
 }
@@ -241,12 +236,10 @@ mod tests {
 
     #[test]
     fn env() {
-        let mut env_map = HashMap::new();
-        env_map.insert("foo".to_string(), "bar".to_string());
-        env_map.insert("cow".to_string(), "moo".to_string());
-
-        let env = EnvBuilder::builder().env_map(env_map).build().unwrap();
-        let expected = expect!["ENV foo=bar cow=moo"];
+        let env = EnvBuilder::builder()
+            .key("foo").value("bar")
+            .build().unwrap();
+        let expected = expect!["ENV foo=bar"];
         expected.assert_eq(&env.to_string());
     }
 }
