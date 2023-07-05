@@ -101,7 +101,14 @@ impl EnvBuilder {
 }
 
 
-/// Builder struct for `Run` instruction
+/// Builder struct for `Run` instruction (shell form)
+/// 
+/// RunBuilder constructs the shell form for [`Run`] by default.
+/// * `RUN <command>`
+///
+/// To construct the exec form, use [`RunExecBuilder`]
+///
+/// [Run]: dockerfile_builder::instruction::Run
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
     instruction_name = Run, 
@@ -112,6 +119,30 @@ pub struct RunBuilder {
 }
 
 impl RunBuilder {
+    fn value(&self) -> Result<String, String> {
+        Ok(format!("{}", self.commands.join(" && \\ \n")))
+    }
+}
+
+
+/// Builder struct for `Run` instruction (exec form)
+/// 
+/// RunBuilder constructs the exec form for [`Run`].
+/// * `RUN ["executable", "param1", "param2"]`
+///
+/// To construct the shell form, use [`RunBuilder`]
+///
+/// [Run]: dockerfile_builder::instruction::Run
+#[derive(Debug, InstructionBuilder)]
+#[instruction_builder(
+    instruction_name = Run, 
+    value_method = value,
+)]
+pub struct RunExecBuilder {
+    pub commands: Vec<String>,
+}
+
+impl RunExecBuilder {
     fn value(&self) -> Result<String, String> {
         Ok(format!(r#"["{}"]"#, self.commands.join(r#"",""#)))
     }
@@ -241,5 +272,20 @@ mod tests {
             .build().unwrap();
         let expected = expect!["ENV foo=bar"];
         expected.assert_eq(&env.to_string());
+    }
+
+    #[test]
+    fn run() {
+        let commands = vec!["source $HOME/.bashrc".to_string(), "echo $HOME".to_string()];
+
+        let run_shell_form = RunBuilder::builder().commands(commands.clone()).build().unwrap();
+        let expected = expect![[r#"
+            RUN source $HOME/.bashrc && \ 
+            echo $HOME"#]];
+        expected.assert_eq(&run_shell_form.to_string());
+
+        let run_exec_form = RunExecBuilder::builder().commands(commands).build().unwrap();
+        let expected = expect![[r#"RUN ["source $HOME/.bashrc","echo $HOME"]"#]];
+        expected.assert_eq(&run_exec_form.to_string());
     }
 }
