@@ -4,6 +4,7 @@ use dockerfile_derive::InstructionInit;
 #[derive(Debug, InstructionInit, Eq, PartialEq)]
 pub enum Instruction {
     From(From),
+    Env(Env),
     Run(Run),
     Arg(Arg),
     Expose(Expose),

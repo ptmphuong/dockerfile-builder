@@ -36,7 +36,9 @@
 //!     .unwrap();
 //! ```
 
-use crate::instruction::{From, Arg, Run, Expose};
+use std::collections::HashMap;
+
+use crate::instruction::{From, Env, Arg, Run, Expose};
 use dockerfile_derive::InstructionBuilder;
 
 /// Builder struct for `From` instruction
@@ -79,6 +81,31 @@ impl FromBuilder {
     }
 }
 
+
+/// Builder struct for `Env` instruction
+#[derive(Debug, InstructionBuilder)]
+#[instruction_builder(
+    instruction_name = Env, 
+    value_method = value,
+)]
+pub struct EnvBuilder {
+    pub env_map: HashMap<String, String>,
+}
+
+impl EnvBuilder {
+    fn value(&self) -> Result<String, String> {
+        Ok(format!(
+            "{}",
+            self.env_map
+                .iter()
+                .map(|(k, v)| format!("{}={}", k, v))
+                .collect::<Vec<String>>()
+                .join(" ")
+        ))
+    }
+}
+
+
 /// Builder struct for `Run` instruction
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
@@ -91,9 +118,7 @@ pub struct RunBuilder {
 
 impl RunBuilder {
     fn value(&self) -> Result<String, String> {
-        Ok(
-            format!(r#"["{}"]"#, self.commands.join(r#"",""#))
-        )
+        Ok(format!(r#"["{}"]"#, self.commands.join(r#"",""#)))
     }
 }
 
@@ -212,5 +237,16 @@ mod tests {
                 "Dockerfile image can only have tag OR digest".to_string(),
             ),
         }
+    }
+
+    #[test]
+    fn env() {
+        let mut env_map = HashMap::new();
+        env_map.insert("foo".to_string(), "bar".to_string());
+        env_map.insert("cow".to_string(), "moo".to_string());
+
+        let env = EnvBuilder::builder().env_map(env_map).build().unwrap();
+        let expected = expect!["ENV foo=bar cow=moo"];
+        expected.assert_eq(&env.to_string());
     }
 }
