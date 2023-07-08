@@ -78,13 +78,35 @@ pub struct Dockerfile {
 }
 
 impl Dockerfile {
+    /// Push an [`Instruction`] to Dockerfile
+    ///
+    /// [Instruction]: instruction::Instruction
     pub fn push<T: Into<Instruction>>(mut self, instruction: T) -> Self {
         self.instructions.push(instruction.into());
         self
     }
 
+    /// Push any raw string to Dockerfile
     pub fn push_any<T: Into<String>>(mut self, instruction: T) -> Self {
         self.instructions.push(Instruction::Any(instruction.into()));
+        self
+    }
+
+    /// Concatinate multiple ['Instructions'] to Dockerfile
+    ///
+    /// [Instruction]: instruction::Instruction
+    pub fn concat<T: Into<Instruction>>(mut self, instructions: Vec<T>) -> Self {
+        for i in instructions {
+            self.instructions.push(i.into());
+        }
+        self
+    }
+
+    /// Concatinate multiple raw strings to Dockerfile
+    pub fn concat_any<T: Into<String>>(mut self, instructions: Vec<T>) -> Self {
+        for i in instructions {
+            self.instructions.push(Instruction::Any(i.into()));
+        }
         self
     }
 }
@@ -108,7 +130,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn quickstart() {
+    fn push_from_instruction() {
         let dockerfile = Dockerfile::default()
             .push(Run::from("echo $HOME"))
             .push(Expose::from("80/tcp"))
@@ -122,7 +144,7 @@ mod tests {
     }
 
     #[test]
-    fn instruction_builder() {
+    fn push_from_instruction_builder() {
         // 2 ways of constructing Instruction.
 
         // Directly from String/&str
@@ -143,4 +165,30 @@ mod tests {
         let expected = expect!["EXPOSE 80/tcp"];
         expected.assert_eq(&dockerfile.to_string());
     }
+
+    #[test]
+    fn concat_from_instruction() {
+        let comments = vec![
+            "# syntax=docker/dockerfile:1",
+            "# escape=`",
+            "",
+        ];
+        let instruction_vec = vec![
+            From::from("cargo-chef AS chef"),
+            Run::from("cargo run"),
+        ];
+
+        let dockerfile = Dockerfile::default()
+            .concat_any(comments)
+            .concat(instruction_vec);
+
+        let expected = expect![[r#"
+            # syntax=docker/dockerfile:1
+            # escape=`
+
+            RUN cargo-chef AS chef
+            RUN cargo run"#]];
+        expected.assert_eq(&dockerfile.to_string());
+    }
+
 }
