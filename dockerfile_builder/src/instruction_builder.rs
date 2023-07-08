@@ -6,15 +6,9 @@
 //!
 //! ## Usage
 //!
-//! All build and setter methods are automatically generated following these formats: 
-//! * The setter method names are identical to the fields names. 
-//! * The argument types of the setter methods are the same as the field types unless the
-//! field type is `Option<...>`. 
-//! * If the field type is `Option<...>`, the argument type is the inner type of `Option`.
-//! * Once all fields are set as desired, use `build()` to build the Instruction. `build()` returns
-//! `Result<InstructionBuilder, std::err::Err>` to safely handle errors.
+//! All build and setter methods for Instruction Builders are automatically generated and follow the same format.
 //!
-//! ## Example 
+//! For example: 
 //!
 //! `ExposeBuilder` is the builder struct for `Expose`.
 //!
@@ -35,6 +29,37 @@
 //!     .build()
 //!     .unwrap();
 //! ```
+//! 
+//! Note that:
+//! * The setter method names are identical to the fields names. 
+//! * For fields with `Option<...>` type: The argument type is the inner type of `Option`. It is
+//! optional to set these fields.
+//! * Once all fields are set as desired, use `build()` to build the Instruction. `build()` returns
+//! `Result<InstructionBuilder, std::err::Err>` to safely handle errors.
+//!
+//!
+//! For fields with `Vec<...>` type, it is also possible to set each element of the Vec.
+//!
+//! For example: 
+//!
+//! `RunBuilder` is the builder struct for `Run`.
+//!
+//! ```rust
+//! pub struct RunBuilder {
+//!     pub commands: Vec<String>,
+//! }
+//! ```
+//!
+//! `Run` can be constructed as follow:
+//! ```rust
+//! use dockerfile_builder::instruction_builder::RunBuilder;
+//! let run = RunBuilder::builder()
+//!     .command("source $HOME/.bashrc")
+//!     .command("echo $HOME")
+//!     .build()
+//!     .unwrap();
+//! ```
+//!
 
 use crate::instruction::{From, Env, Arg, Run, Expose};
 use dockerfile_derive::InstructionBuilder;
@@ -115,6 +140,7 @@ impl EnvBuilder {
     value_method = value,
 )]
 pub struct RunBuilder {
+    #[instruction_builder(each = command)]
     pub commands: Vec<String>,
 }
 
@@ -139,6 +165,7 @@ impl RunBuilder {
     value_method = value,
 )]
 pub struct RunExecBuilder {
+    #[instruction_builder(each = command)]
     pub commands: Vec<String>,
 }
 
@@ -288,4 +315,26 @@ mod tests {
         let expected = expect![[r#"RUN ["source $HOME/.bashrc","echo $HOME"]"#]];
         expected.assert_eq(&run_exec_form.to_string());
     }
+
+    #[test]
+    fn run_each() {
+        let run_shell_form = RunBuilder::builder()
+            .command("source $HOME/.bashrc")
+            .command("echo $HOME")
+            .build()
+            .unwrap();
+        let expected = expect![[r#"
+            RUN source $HOME/.bashrc && \ 
+            echo $HOME"#]];
+        expected.assert_eq(&run_shell_form.to_string());
+
+        let run_exec_form = RunExecBuilder::builder()
+            .command("source $HOME/.bashrc")
+            .command("echo $HOME")
+            .build()
+            .unwrap();
+        let expected = expect![[r#"RUN ["source $HOME/.bashrc","echo $HOME"]"#]];
+        expected.assert_eq(&run_exec_form.to_string());
+    }
+
 }

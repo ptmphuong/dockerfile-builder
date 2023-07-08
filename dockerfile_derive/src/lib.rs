@@ -101,7 +101,8 @@ pub fn instruction_builder(input: TokenStream) -> TokenStream {
 
     let struct_ident = &input.ident;
     let builder_ident = syn::Ident::new(
-        &format!("{}Builder", struct_ident), 
+        &format!("BuilderOf{}", struct_ident), 
+        //&format!("{}Builder", struct_ident), 
         struct_ident.span()
     );
 
@@ -160,6 +161,62 @@ pub fn instruction_builder(input: TokenStream) -> TokenStream {
         }
     });
 
+    let builder_set_each_method = fields.iter().map(|f| {
+        if !&f.attrs.is_empty() {
+            if f.attrs.len() != 1 {
+                return make_err(&f.ident, EXPECT_EACH_ATTR_TEMPLATE).into();
+            }
+
+            let each_ident_result = get_each_attr(&f.attrs, &f.ident.clone().unwrap());
+
+            let each_ident = match each_ident_result {
+                Ok(i) => i,
+                Err(e) => return e.into(),
+            };
+
+            let name = &f.ident;
+            let original_ty = &f.ty;
+            let inner_ty = inner_type("Vec", original_ty);
+            if inner_ty.is_none() {
+                return make_err(f, r#"Fields must have Vec type to use the "each"" attribute"#).into();
+            }
+            let set_ty = inner_ty.unwrap();
+
+            if is_type("String", set_ty) {
+                Some(quote! { 
+                    pub fn #each_ident<T: Into<String>>(&mut self, #each_ident: T) -> &mut Self {
+                        let arg = #each_ident.into();
+                        if self.#name.is_none() {
+                            self.#name = Some(vec![]);
+                        }
+                        if let Some(ref mut vector) = self.#name {
+                            vector.push(arg);
+                        } else {
+                            unreachable!();
+                        }
+                        self
+                    }
+                })
+            } else {
+                Some(quote! { 
+                    pub fn #each_ident(&mut self, #each_ident: #set_ty) -> &mut Self {
+                        if self.#name.is_none() {
+                            self.#name = vec![];
+                        }
+                        if let Some(ref mut vector) = self.#name {
+                            vector.push(#each_ident);
+                        } else {
+                            unreachable!();
+                        }
+                        self
+                    }
+                })
+            }
+        } else {
+            None
+        }
+    });
+
     let builder_check_build_field = fields.iter().map(|f| {
         let name = &f.ident;
         let ty = &f.ty;
@@ -191,6 +248,7 @@ pub fn instruction_builder(input: TokenStream) -> TokenStream {
 
         impl #builder_ident {
             #(#builder_set_method)*
+            #(#builder_set_each_method)*
 
             fn check_build(&mut self) -> std::result::Result<#struct_ident, std::boxed::Box<dyn std::error::Error>> {
                 Ok(#struct_ident {
@@ -255,6 +313,30 @@ const EXPECT_ATTR_TEMPLATE: &str = r#"Expected
     value_method = ...
 )]"#;
 
+const EXPECT_EACH_ATTR_TEMPLATE: &str = r#"Expected 
+#[instruction_builder(each = ...)]"#;
+
+fn get_each_attr(attr: &Vec<syn::Attribute>, struct_ident: &syn::Ident) -> Result<syn::Ident, proc_macro2::TokenStream> {
+    if attr.len() != 1 {
+        return Err(make_err(struct_ident, EXPECT_EACH_ATTR_TEMPLATE));
+    }
+    if let syn::Meta::List( ref metalist ) = &attr[attr.len() - 1].meta {
+        let tokenstream = &mut metalist.tokens.clone().into_iter();
+
+        verify_attr_ident(tokenstream.next(), "each", metalist, EXPECT_EACH_ATTR_TEMPLATE)?;
+        verify_attr_punct(tokenstream.next(), '=', metalist, EXPECT_EACH_ATTR_TEMPLATE)?;
+
+        let each_ident = match tokenstream.next() {
+            Some(TokenTree::Ident(ref i)) => i.clone(),
+            _ => return Err(make_err(metalist, EXPECT_EACH_ATTR_TEMPLATE)),
+        };
+
+        Ok(each_ident)
+    } else {
+        return Err(make_err(struct_ident, EXPECT_EACH_ATTR_TEMPLATE));
+    }
+}
+
 fn get_attr(attr: &Vec<syn::Attribute>, struct_ident: &syn::Ident) -> Result<AttrData, proc_macro2::TokenStream> {
     if attr.is_empty() {
         return Err(make_err(struct_ident, EXPECT_ATTR_TEMPLATE));
@@ -264,17 +346,17 @@ fn get_attr(attr: &Vec<syn::Attribute>, struct_ident: &syn::Ident) -> Result<Att
     if let syn::Meta::List( ref metalist ) = &attr[attr.len() - 1].meta {
         let tokenstream = &mut metalist.tokens.clone().into_iter();
 
-        verify_attr_ident(tokenstream.next(), "instruction_name", metalist)?;
-        verify_attr_punct(tokenstream.next(), '=', metalist)?;
+        verify_attr_ident(tokenstream.next(), "instruction_name", metalist, EXPECT_ATTR_TEMPLATE)?;
+        verify_attr_punct(tokenstream.next(), '=', metalist, EXPECT_ATTR_TEMPLATE)?;
 
         let instruction_name = match tokenstream.next() {
             Some(TokenTree::Ident(ref i)) => i.clone(),
             _ => return Err(make_err(metalist, EXPECT_ATTR_TEMPLATE)),
         };
 
-        verify_attr_punct(tokenstream.next(), ',', metalist)?;
-        verify_attr_ident(tokenstream.next(), "value_method", metalist)?;
-        verify_attr_punct(tokenstream.next(), '=', metalist)?;
+        verify_attr_punct(tokenstream.next(), ',', metalist, EXPECT_ATTR_TEMPLATE)?;
+        verify_attr_ident(tokenstream.next(), "value_method", metalist, EXPECT_ATTR_TEMPLATE)?;
+        verify_attr_punct(tokenstream.next(), '=', metalist, EXPECT_ATTR_TEMPLATE)?;
 
         let value_method = match tokenstream.next() {
             Some(TokenTree::Ident(ref i)) => i.clone(),
@@ -287,27 +369,27 @@ fn get_attr(attr: &Vec<syn::Attribute>, struct_ident: &syn::Ident) -> Result<Att
     }
 }
 
-fn verify_attr_ident<T: quote::ToTokens>(token: Option<TokenTree>, expected_ident: &str, span: T) -> Result<(), proc_macro2::TokenStream> {
+fn verify_attr_ident<T: quote::ToTokens>(token: Option<TokenTree>, expected_ident: &str, span: T, err_msg: &str) -> Result<(), proc_macro2::TokenStream> {
     match token {
         Some(TokenTree::Ident(ref i)) => {
             if i != expected_ident {
-                return Err(make_err(span, EXPECT_ATTR_TEMPLATE));
+                return Err(make_err(span, err_msg));
             }
         },
-        _ => return Err(make_err(span, EXPECT_ATTR_TEMPLATE)),
+        _ => return Err(make_err(span, err_msg)),
 
     }
     Ok(())
 }
 
-fn verify_attr_punct<T: quote::ToTokens>(token: Option<TokenTree>, expected_punct: char, span: T) -> Result<(), proc_macro2::TokenStream> {
+fn verify_attr_punct<T: quote::ToTokens>(token: Option<TokenTree>, expected_punct: char, span: T, err_msg: &str) -> Result<(), proc_macro2::TokenStream> {
     match token {
         Some(TokenTree::Punct(ref p)) => {
             if p.as_char() != expected_punct {
-                return Err(make_err(span, EXPECT_ATTR_TEMPLATE));
+                return Err(make_err(span, err_msg));
             }
         },
-        _ => return Err(make_err(span, EXPECT_ATTR_TEMPLATE)),
+        _ => return Err(make_err(span, err_msg)),
 
     }
     Ok(())
