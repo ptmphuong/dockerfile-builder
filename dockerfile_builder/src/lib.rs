@@ -48,7 +48,7 @@
 //!
 //!let expose_from_builder = ExposeBuilder::builder()
 //!    .port(80)
-//!    .proto("tcp")
+//!    .protocol("tcp")
 //!    .build()
 //!    .unwrap();
 //!
@@ -153,7 +153,7 @@ mod tests {
         // Use a builder
         let expose_from_builder = ExposeBuilder::builder()
             .port(80)
-            .proto("tcp")
+            .protocol("tcp")
             .build()
             .unwrap();
 

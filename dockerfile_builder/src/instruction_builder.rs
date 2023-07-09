@@ -15,7 +15,7 @@
 //! ```rust
 //! pub struct ExposeBuilder {
 //!     pub port: u16,
-//!     pub proto: Option<String>,
+//!     pub protocol: Option<String>,
 //! }
 //! ```
 //!
@@ -25,7 +25,7 @@
 //! use dockerfile_builder::instruction_builder::ExposeBuilder;
 //! let expose = ExposeBuilder::builder()
 //!     .port(80)
-//!     .proto("tcp")
+//!     .protocol("tcp")
 //!     .build()
 //!     .unwrap();
 //! ```
@@ -277,6 +277,9 @@ impl ArgBuilder {
 }
 
 /// Builder struct for `EXPOSE` instruction
+/// * `EXPOSE <port>`
+/// or
+/// * `EXPOSE <port>/<protocol>`
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
     instruction_name = EXPOSE,
@@ -284,7 +287,7 @@ impl ArgBuilder {
 )]
 pub struct ExposeBuilder {
     pub port: u16,
-    pub proto: Option<String>,
+    pub protocol: Option<String>,
 }
 
 impl ExposeBuilder {
@@ -292,7 +295,7 @@ impl ExposeBuilder {
         Ok(format!(
             "{}{}", 
             self.port, 
-            self.proto.clone().map(|p| format!("/{}", p)).unwrap_or_default()
+            self.protocol.clone().map(|p| format!("/{}", p)).unwrap_or_default()
         ))
     }
 }
@@ -437,5 +440,20 @@ mod tests {
             .build().unwrap();
         let expected = expect![[r#"LABEL version="1.0""#]];
         expected.assert_eq(&label.to_string());
+    }
+
+    #[test]
+    fn expose() {
+        let expose = ExposeBuilder::builder()
+            .port(80)
+            .build().unwrap();
+        let expected = expect![[r#"EXPOSE 80"#]];
+        expected.assert_eq(&expose.to_string());
+
+        let expose = ExposeBuilder::builder()
+            .port(80).protocol("udp")
+            .build().unwrap();
+        let expected = expect![[r#"EXPOSE 80/udp"#]];
+        expected.assert_eq(&expose.to_string());
     }
 }
