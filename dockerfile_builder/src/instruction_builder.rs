@@ -61,7 +61,7 @@
 //! ```
 //!
 
-use crate::instruction::{FROM, RUN, CMD, ENV, EXPOSE, LABEL, ADD, ARG};
+use crate::instruction::{FROM, RUN, CMD, ENV, EXPOSE, LABEL, ADD, COPY, ARG};
 use dockerfile_derive::InstructionBuilder;
 
 /// Builder struct for `FROM` instruction
@@ -264,7 +264,7 @@ impl LabelBuilder {
 )]
 pub struct AddBuilder {
     pub chown: Option<String>,
-    pub chmod: Option<String>,
+    pub chmod: Option<u16>,
     pub src: String,
     pub dest: String,
 }
@@ -327,6 +327,38 @@ impl AddGitBuilder {
             self.keep_git_dir.as_ref().map(|c| format!("--keep-git-dir={} ", c)).unwrap_or_default(),
             self.git_ref, 
             self.dir,
+        ))
+    }
+}
+
+
+/// Builder struct for `COPY` instruction
+/// * `COPY [--chown=<chown>] [--chmod=<chmod>] [--link] <src>... <dest>`
+#[derive(Debug, InstructionBuilder)]
+#[instruction_builder(
+    instruction_name = COPY, 
+    value_method = value,
+)]
+pub struct CopyBuilder {
+    pub chown: Option<String>,
+    pub chmod: Option<u16>,
+    pub link: Option<bool>,
+    pub src: String,
+    pub dest: String,
+}
+
+impl CopyBuilder {
+    fn value(&self) -> Result<String, String> {
+        Ok(format!(
+            "{}{}{}{} {}",
+            self.chown.as_ref().map(|c| format!("--chown={} ", c)).unwrap_or_default(),
+            self.chmod.as_ref().map(|c| format!("--chmod={} ", c)).unwrap_or_default(),
+            self.link.as_ref().map(|c| match c {
+                    true => format!("--link "),
+                    false => "".to_string(),
+                }).unwrap_or_default(),
+            self.src, 
+            self.dest,
         ))
     }
 }
@@ -545,7 +577,7 @@ mod tests {
 
         let add = AddBuilder::builder()
             .chown("myuser:mygroup")
-            .chmod("655")
+            .chmod(655)
             .src("hom*")
             .dest("/mydir/")
             .build().unwrap();
@@ -573,5 +605,25 @@ mod tests {
             .build().unwrap();
         let expected = expect!["ADD --keep-git-dir=true https://github.com/moby/buildkit.git#v0.10.1 /buildkit"];
         expected.assert_eq(&add.to_string());
+    }
+
+    #[test]
+    fn copy() {
+        let copy = CopyBuilder::builder()
+            .chown("bin")
+            .chmod(655)
+            .src("files*")
+            .dest("/somedir/")
+            .build().unwrap();
+        let expected = expect!["COPY --chown=bin --chmod=655 files* /somedir/"];
+        expected.assert_eq(&copy.to_string());
+
+        let copy = CopyBuilder::builder()
+            .link(true)
+            .src("foo/")
+            .dest("bar/")
+            .build().unwrap();
+        let expected = expect!["COPY --link foo/ bar/"];
+        expected.assert_eq(&copy.to_string());
     }
 }

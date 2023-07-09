@@ -10,6 +10,7 @@ pub enum Instruction {
     LABEL(LABEL),
     EXPOSE(EXPOSE),
     ADD(ADD),
+    COPY(COPY),
     ARG(ARG),
     ANY(String),
 }
