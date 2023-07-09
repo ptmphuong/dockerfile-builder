@@ -101,8 +101,7 @@ pub fn instruction_builder(input: TokenStream) -> TokenStream {
 
     let struct_ident = &input.ident;
     let builder_ident = syn::Ident::new(
-        &format!("BuilderOf{}", struct_ident), 
-        //&format!("{}Builder", struct_ident), 
+        &format!("{}Inner", struct_ident), 
         struct_ident.span()
     );
 
