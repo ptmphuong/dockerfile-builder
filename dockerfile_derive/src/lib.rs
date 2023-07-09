@@ -21,7 +21,7 @@ pub fn instruction_init(input: TokenStream) -> TokenStream {
     });
 
     let impl_convert_from_for_instruction = variants.iter()
-        .filter(|v| &v.ident != "Any")
+        .filter(|v| &v.ident != "ANY")
         .map(|v| {
             let variant = &v.ident;
             quote! {
@@ -34,7 +34,7 @@ pub fn instruction_init(input: TokenStream) -> TokenStream {
     });
 
     let variant_init = variants.iter()
-        .filter(|v| &v.ident != "Any")
+        .filter(|v| &v.ident != "ANY")
         .map(|v| {
             let variant = &v.ident;
             quote! {
@@ -47,7 +47,7 @@ pub fn instruction_init(input: TokenStream) -> TokenStream {
     );
 
     let impl_convert_from_for_variant = variants.iter()
-        .filter(|v| &v.ident != "Any")
+        .filter(|v| &v.ident != "ANY")
         .map(|v| {
             let variant = &v.ident;
             quote! {
@@ -63,7 +63,7 @@ pub fn instruction_init(input: TokenStream) -> TokenStream {
     );
 
     let impl_display_for_variant = variants.iter()
-        .filter(|v| &v.ident != "Any")
+        .filter(|v| &v.ident != "ANY")
         .map(|v| {
             let variant = &v.ident;
             let variant_string = &variant.to_string().to_uppercase();

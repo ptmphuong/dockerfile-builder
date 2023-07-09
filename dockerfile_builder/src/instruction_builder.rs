@@ -61,13 +61,19 @@
 //! ```
 //!
 
-use crate::instruction::{From, Run, Cmd, Env, Arg, Expose, Label};
+use crate::instruction::{FROM, RUN, CMD, ENV, ARG, EXPOSE, LABEL};
 use dockerfile_derive::InstructionBuilder;
 
-/// Builder struct for `From` instruction
+/// Builder struct for `FROM` instruction
+/// * `FROM [--platform=<platform>] <image> [AS <name>]`
+/// or 
+/// * `FROM [--platform=<platform>] <image>[:<tag>] [AS <name>]`
+/// or 
+/// * `FROM [--platform=<platform>] <image>[@<digest>] [AS <name>]`
+///
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = From, 
+    instruction_name = FROM, 
     value_method = value,
 )]
 pub struct FromBuilder {
@@ -105,10 +111,11 @@ impl FromBuilder {
 }
 
 
-/// Builder struct for `Env` instruction
+/// Builder struct for `ENV` instruction
+/// * `ENV <key>=<value>`
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = Env, 
+    instruction_name = ENV, 
     value_method = value,
 )]
 pub struct EnvBuilder {
@@ -126,17 +133,17 @@ impl EnvBuilder {
 }
 
 
-/// Builder struct for `Run` instruction (shell form)
+/// Builder struct for `RUN` instruction (shell form)
 /// 
-/// RunBuilder constructs the shell form for [`Run`] by default.
+/// RunBuilder constructs the shell form for [`RUN`] by default.
 /// * `RUN <command>`
 ///
 /// To construct the exec form, use [`RunExecBuilder`]
 ///
-/// [Run]: dockerfile_builder::instruction::Run
+/// [RUN]: dockerfile_builder::instruction::RUN
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = Run, 
+    instruction_name = RUN, 
     value_method = value,
 )]
 pub struct RunBuilder {
@@ -151,17 +158,17 @@ impl RunBuilder {
 }
 
 
-/// Builder struct for `Run` instruction (exec form)
+/// Builder struct for `RUN` instruction (exec form)
 /// 
-/// RunBuilder constructs the exec form for [`Run`].
+/// RunBuilder constructs the exec form for [`RUN`].
 /// * `RUN ["executable", "param1", "param2"]`
 ///
 /// To construct the shell form, use [`RunBuilder`]
 ///
-/// [Run]: dockerfile_builder::instruction::Run
+/// [RUN]: dockerfile_builder::instruction::RUN
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = Run, 
+    instruction_name = RUN, 
     value_method = value,
 )]
 pub struct RunExecBuilder {
@@ -176,17 +183,17 @@ impl RunExecBuilder {
 }
 
 
-/// Builder struct for `Cmd` instruction (shell form)
+/// Builder struct for `CMD` instruction (shell form)
 /// 
-/// CmdBuilder constructs the shell form for [`Cmd`] by default.
+/// CmdBuilder constructs the shell form for [`CMD`] by default.
 /// * `CMD command param1 param2`
 ///
 /// To construct the exec form, use [`CmdExecBuilder`]
 ///
-/// [Cmd]: dockerfile_builder::instruction::Cmd
+/// [CMD]: dockerfile_builder::instruction::CMD
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = Cmd, 
+    instruction_name = CMD, 
     value_method = value,
 )]
 pub struct CmdBuilder {
@@ -201,17 +208,17 @@ impl CmdBuilder {
 }
 
 
-/// Builder struct for `Cmd` instruction (exec form)
+/// Builder struct for `CMD` instruction (exec form)
 /// 
-/// CmdBuilder constructs the exec form for [`Cmd`].
+/// CmdBuilder constructs the exec form for [`CMD`].
 /// * `CMD ["executable", "param1", "param2"]`
 ///
 /// To construct the shell form, use [`CmdBuilder`]
 ///
-/// [Cmd]: dockerfile_builder::instruction::Cmd
+/// [CMD]: dockerfile_builder::instruction::CMD
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = Cmd, 
+    instruction_name = CMD, 
     value_method = value,
 )]
 pub struct CmdExecBuilder {
@@ -226,11 +233,11 @@ impl CmdExecBuilder {
 }
 
 
-/// Builder struct for `Label` instruction
+/// Builder struct for `LABEL` instruction
 /// * `LABEL <key>=<value>`
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = Label, 
+    instruction_name = LABEL, 
     value_method = value,
 )]
 pub struct LabelBuilder {
@@ -248,10 +255,10 @@ impl LabelBuilder {
 }
 
 
-/// Builder struct for `Arg` instruction
+/// Builder struct for `ARG` instruction
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = Arg,
+    instruction_name = ARG,
     value_method = value,
 )]
 pub struct ArgBuilder {
@@ -269,10 +276,10 @@ impl ArgBuilder {
     }
 }
 
-/// Builder struct for `Expose` instruction
+/// Builder struct for `EXPOSE` instruction
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = Expose,
+    instruction_name = EXPOSE,
     value_method = value,
 )]
 pub struct ExposeBuilder {

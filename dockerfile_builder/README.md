@@ -15,12 +15,12 @@ dockerfile_builder = { git = "https://github.com/ptmphuong/dockerfile-builder" }
 ```rust
 // src/main.rs 
 use dockerfile_builder::Dockerfile;
-use dockerfile_builder::instruction::{Run, Expose};
+use dockerfile_builder::instruction::{RUN, EXPOSE};
 
 fn main() {
     let dockerfile = Dockerfile::default()
-        .push(Run::from("echo $HOME"))
-        .push(Expose::from("80/tcp"))
+        .push(RUN::from("echo $HOME"))
+        .push(EXPOSE::from("80/tcp"))
         .push_any("# Just adding a comment");
     
     let expected = r#"RUN echo $HOME
@@ -42,15 +42,15 @@ Instruction builders provide structured and type-safe interfaces to build instru
 ```rust
 // src/main.rs 
 use dockerfile_builder::Dockerfile;
-use dockerfile_builder::instruction::Expose;
+use dockerfile_builder::instruction::EXPOSE;
 use dockerfile_builder::instruction_builder::ExposeBuilder;
 
 fn main() {
-    let expose = Expose::from("80/tcp");
+    let expose = EXPOSE::from("80/tcp");
     
     let expose_from_builder = ExposeBuilder::builder()
         .port(80)
-        .proto("tcp")
+        .protocol("tcp")
         .build()
         .unwrap();
     

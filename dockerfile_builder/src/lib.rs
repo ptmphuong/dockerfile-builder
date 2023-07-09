@@ -13,11 +13,11 @@
 //!
 //!```rust
 //!use dockerfile_builder::Dockerfile;
-//!use dockerfile_builder::instruction::{Run, Expose};
+//!use dockerfile_builder::instruction::{RUN, EXPOSE};
 //!
 //!let dockerfile = Dockerfile::default()
-//!    .push(Run::from("echo $HOME"))
-//!    .push(Expose::from("80/tcp"))
+//!    .push(RUN::from("echo $HOME"))
+//!    .push(EXPOSE::from("80/tcp"))
 //!    .push_any("Just adding a comment");
 //!    
 //!let expected = r"RUN echo $HOME
@@ -41,10 +41,10 @@
 //!
 //! ```rust
 //!use dockerfile_builder::Dockerfile;
-//!use dockerfile_builder::instruction::Expose;
+//!use dockerfile_builder::instruction::EXPOSE;
 //!use dockerfile_builder::instruction_builder::ExposeBuilder;
 //!
-//!let expose = Expose::from("80/tcp");
+//!let expose = EXPOSE::from("80/tcp");
 //!
 //!let expose_from_builder = ExposeBuilder::builder()
 //!    .port(80)
@@ -88,7 +88,7 @@ impl Dockerfile {
 
     /// Push any raw string to Dockerfile
     pub fn push_any<T: Into<String>>(mut self, instruction: T) -> Self {
-        self.instructions.push(Instruction::Any(instruction.into()));
+        self.instructions.push(Instruction::ANY(instruction.into()));
         self
     }
 
@@ -105,7 +105,7 @@ impl Dockerfile {
     /// Concatinate multiple raw strings to Dockerfile
     pub fn concat_any<T: Into<String>>(mut self, instructions: Vec<T>) -> Self {
         for i in instructions {
-            self.instructions.push(Instruction::Any(i.into()));
+            self.instructions.push(Instruction::ANY(i.into()));
         }
         self
     }
@@ -125,15 +125,15 @@ impl Display for Dockerfile {
 
 #[cfg(test)]
 mod tests {
-    use crate::{instruction::{Run, Expose}, instruction_builder::ExposeBuilder};
+    use crate::{instruction::{FROM, RUN, EXPOSE}, instruction_builder::ExposeBuilder};
     use expect_test::expect;
     use super::*;
 
     #[test]
     fn push_from_instruction() {
         let dockerfile = Dockerfile::default()
-            .push(Run::from("echo $HOME"))
-            .push(Expose::from("80/tcp"))
+            .push(RUN::from("echo $HOME"))
+            .push(EXPOSE::from("80/tcp"))
             .push_any("# Just adding a comment");
 
         let expected = expect![[r#"
@@ -148,7 +148,7 @@ mod tests {
         // 2 ways of constructing Instruction.
 
         // Directly from String/&str
-        let expose = Expose::from("80/tcp");
+        let expose = EXPOSE::from("80/tcp");
 
         // Use a builder
         let expose_from_builder = ExposeBuilder::builder()
@@ -173,8 +173,8 @@ mod tests {
             "# escape=`",
         ];
         let instruction_vec = vec![
-            Instruction::From(From::from("cargo-chef AS chef")),
-            Instruction::Run(Run::from("cargo run")),
+            Instruction::FROM(FROM::from("cargo-chef AS chef")),
+            Instruction::RUN(RUN::from("cargo run")),
         ];
 
         let dockerfile = Dockerfile::default()
