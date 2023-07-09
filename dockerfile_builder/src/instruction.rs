@@ -6,6 +6,7 @@ pub enum Instruction {
     From(From),
     Env(Env),
     Run(Run),
+    Cmd(Cmd),
     Arg(Arg),
     Expose(Expose),
     Any(String),

@@ -61,7 +61,7 @@
 //! ```
 //!
 
-use crate::instruction::{From, Env, Arg, Run, Expose};
+use crate::instruction::{From, Run, Cmd, Env, Arg, Expose};
 use dockerfile_derive::InstructionBuilder;
 
 /// Builder struct for `From` instruction
@@ -170,6 +170,56 @@ pub struct RunExecBuilder {
 }
 
 impl RunExecBuilder {
+    fn value(&self) -> Result<String, String> {
+        Ok(format!(r#"["{}"]"#, self.commands.join(r#"",""#)))
+    }
+}
+
+
+/// Builder struct for `Cmd` instruction (shell form)
+/// 
+/// CmdBuilder constructs the shell form for [`Cmd`] by default.
+/// * `CMD command param1 param2`
+///
+/// To construct the exec form, use [`CmdExecBuilder`]
+///
+/// [Cmd]: dockerfile_builder::instruction::Cmd
+#[derive(Debug, InstructionBuilder)]
+#[instruction_builder(
+    instruction_name = Cmd, 
+    value_method = value,
+)]
+pub struct CmdBuilder {
+    #[instruction_builder(each = command)]
+    pub commands: Vec<String>,
+}
+
+impl CmdBuilder {
+    fn value(&self) -> Result<String, String> {
+        Ok(format!("{}", self.commands.join(" ")))
+    }
+}
+
+
+/// Builder struct for `Cmd` instruction (exec form)
+/// 
+/// CmdBuilder constructs the exec form for [`Cmd`].
+/// * `CMD ["executable", "param1", "param2"]`
+///
+/// To construct the shell form, use [`CmdBuilder`]
+///
+/// [Cmd]: dockerfile_builder::instruction::Cmd
+#[derive(Debug, InstructionBuilder)]
+#[instruction_builder(
+    instruction_name = Cmd, 
+    value_method = value,
+)]
+pub struct CmdExecBuilder {
+    #[instruction_builder(each = command)]
+    pub commands: Vec<String>,
+}
+
+impl CmdExecBuilder {
     fn value(&self) -> Result<String, String> {
         Ok(format!(r#"["{}"]"#, self.commands.join(r#"",""#)))
     }
@@ -335,6 +385,19 @@ mod tests {
             .unwrap();
         let expected = expect![[r#"RUN ["source $HOME/.bashrc","echo $HOME"]"#]];
         expected.assert_eq(&run_exec_form.to_string());
+    }
+
+    #[test]
+    fn cmd() {
+        let commands = vec![r#"echo "This is a test.""#.to_string(), "|".to_string(), "wc -".to_string()];
+        let cmd_shell_form = CmdBuilder::builder().commands(commands).build().unwrap();
+        let expected = expect![[r#"CMD echo "This is a test." | wc -"#]];
+        expected.assert_eq(&cmd_shell_form.to_string());
+
+        let commands = vec!["/usr/bin/wc".to_string(),"--help".to_string()];
+        let cmd_exec_form = CmdExecBuilder::builder().commands(commands).build().unwrap();
+        let expected = expect![[r#"CMD ["/usr/bin/wc","--help"]"#]];
+        expected.assert_eq(&cmd_exec_form.to_string());
     }
 
 }
