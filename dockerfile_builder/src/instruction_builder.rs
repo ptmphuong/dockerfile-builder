@@ -61,7 +61,7 @@
 //! ```
 //!
 
-use crate::instruction::{From, Run, Cmd, Env, Arg, Expose};
+use crate::instruction::{From, Run, Cmd, Env, Arg, Expose, Label};
 use dockerfile_derive::InstructionBuilder;
 
 /// Builder struct for `From` instruction
@@ -224,6 +224,29 @@ impl CmdExecBuilder {
         Ok(format!(r#"["{}"]"#, self.commands.join(r#"",""#)))
     }
 }
+
+
+/// Builder struct for `Label` instruction
+/// * `LABEL <key>=<value>`
+#[derive(Debug, InstructionBuilder)]
+#[instruction_builder(
+    instruction_name = Label, 
+    value_method = value,
+)]
+pub struct LabelBuilder {
+    pub key: String,
+    pub value: String,
+}
+
+impl LabelBuilder {
+    fn value(&self) -> Result<String, String> {
+        Ok(format!(
+            "{}={}",
+            self.key, self.value
+        ))
+    }
+}
+
 
 /// Builder struct for `Arg` instruction
 #[derive(Debug, InstructionBuilder)]
@@ -400,4 +423,12 @@ mod tests {
         expected.assert_eq(&cmd_exec_form.to_string());
     }
 
+    #[test]
+    fn label() {
+        let label = LabelBuilder::builder()
+            .key("version").value(r#""1.0""#)
+            .build().unwrap();
+        let expected = expect![[r#"LABEL version="1.0""#]];
+        expected.assert_eq(&label.to_string());
+    }
 }
