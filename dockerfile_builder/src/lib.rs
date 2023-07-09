@@ -92,7 +92,7 @@ impl Dockerfile {
         self
     }
 
-    /// Concatinate a vec [`Instruction`] to Dockerfile
+    /// Concatinate multiple ['Instructions'] to Dockerfile
     ///
     /// [Instruction]: instruction::Instruction
     pub fn concat<T: Into<Instruction>>(mut self, instructions: Vec<T>) -> Self {
@@ -102,7 +102,7 @@ impl Dockerfile {
         self
     }
 
-    /// Concatinate a vec raw strings to Dockerfile
+    /// Concatinate multiple raw strings to Dockerfile
     pub fn concat_any<T: Into<String>>(mut self, instructions: Vec<T>) -> Self {
         for i in instructions {
             self.instructions.push(Instruction::Any(i.into()));
@@ -171,11 +171,10 @@ mod tests {
         let comments = vec![
             "# syntax=docker/dockerfile:1",
             "# escape=`",
-            "",
         ];
         let instruction_vec = vec![
-            From::from("cargo-chef AS chef"),
-            Run::from("cargo run"),
+            Instruction::From(From::from("cargo-chef AS chef")),
+            Instruction::Run(Run::from("cargo run")),
         ];
 
         let dockerfile = Dockerfile::default()
@@ -185,8 +184,7 @@ mod tests {
         let expected = expect![[r#"
             # syntax=docker/dockerfile:1
             # escape=`
-
-            RUN cargo-chef AS chef
+            FROM cargo-chef AS chef
             RUN cargo run"#]];
         expected.assert_eq(&dockerfile.to_string());
     }
