@@ -8,8 +8,9 @@ pub enum Instruction {
     RUN(RUN),
     CMD(CMD),
     LABEL(LABEL),
-    ARG(ARG),
     EXPOSE(EXPOSE),
+    ADD(ADD),
+    ARG(ARG),
     ANY(String),
 }
 

@@ -61,7 +61,7 @@
 //! ```
 //!
 
-use crate::instruction::{FROM, RUN, CMD, ENV, ARG, EXPOSE, LABEL};
+use crate::instruction::{FROM, RUN, CMD, ENV, EXPOSE, LABEL, ADD, ARG};
 use dockerfile_derive::InstructionBuilder;
 
 /// Builder struct for `FROM` instruction
@@ -255,6 +255,83 @@ impl LabelBuilder {
 }
 
 
+/// Builder struct for `ADD` instruction (standard form)
+/// * `ADD [--chown=<chown>] [--chmod=<chmod>] [--checksum=<checksum>] <src>... <dest>`
+#[derive(Debug, InstructionBuilder)]
+#[instruction_builder(
+    instruction_name = ADD, 
+    value_method = value,
+)]
+pub struct AddBuilder {
+    pub chown: Option<String>,
+    pub chmod: Option<String>,
+    pub src: String,
+    pub dest: String,
+}
+
+impl AddBuilder {
+    fn value(&self) -> Result<String, String> {
+        Ok(format!(
+            "{}{}{} {}",
+            self.chown.as_ref().map(|c| format!("--chown={} ", c)).unwrap_or_default(),
+            self.chmod.as_ref().map(|c| format!("--chmod={} ", c)).unwrap_or_default(),
+            self.src, 
+            self.dest,
+        ))
+    }
+}
+
+
+/// Builder struct for `ADD` instruction (http src)
+/// * `ADD --checksum=<checksum> <src> <dest>`
+#[derive(Debug, InstructionBuilder)]
+#[instruction_builder(
+    instruction_name = ADD, 
+    value_method = value,
+)]
+pub struct AddHttpBuilder {
+    pub checksum: Option<String>,
+    pub src: String,
+    pub dest: String,
+}
+
+impl AddHttpBuilder {
+    fn value(&self) -> Result<String, String> {
+        Ok(format!(
+            "{}{} {}",
+            self.checksum.as_ref().map(|c| format!("--checksum={} ", c)).unwrap_or_default(),
+            self.src, 
+            self.dest,
+        ))
+    }
+}
+
+
+/// Builder struct for `ADD` instruction (git repository)
+/// * `ADD [--keep-git-dir=<boolean>] <git ref> <dir>`
+#[derive(Debug, InstructionBuilder)]
+#[instruction_builder(
+    instruction_name = ADD, 
+    value_method = value,
+)]
+pub struct AddGitBuilder {
+    pub keep_git_dir: Option<bool>,
+    pub git_ref: String,
+    pub dir: String,
+}
+
+impl AddGitBuilder {
+    fn value(&self) -> Result<String, String> {
+        Ok(format!(
+            "{}{} {}",
+            self.keep_git_dir.as_ref().map(|c| format!("--keep-git-dir={} ", c)).unwrap_or_default(),
+            self.git_ref, 
+            self.dir,
+        ))
+    }
+}
+
+
 /// Builder struct for `ARG` instruction
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
@@ -295,7 +372,7 @@ impl ExposeBuilder {
         Ok(format!(
             "{}{}", 
             self.port, 
-            self.protocol.clone().map(|p| format!("/{}", p)).unwrap_or_default()
+            self.protocol.as_ref().map(|p| format!("/{}", p)).unwrap_or_default()
         ))
     }
 }
@@ -455,5 +532,46 @@ mod tests {
             .build().unwrap();
         let expected = expect![[r#"EXPOSE 80/udp"#]];
         expected.assert_eq(&expose.to_string());
+    }
+
+    #[test]
+    fn add() {
+        let add = AddBuilder::builder()
+            .src("hom*")
+            .dest("/mydir/")
+            .build().unwrap();
+        let expected = expect!["ADD hom* /mydir/"];
+        expected.assert_eq(&add.to_string());
+
+        let add = AddBuilder::builder()
+            .chown("myuser:mygroup")
+            .chmod("655")
+            .src("hom*")
+            .dest("/mydir/")
+            .build().unwrap();
+        let expected = expect!["ADD --chown=myuser:mygroup --chmod=655 hom* /mydir/"];
+        expected.assert_eq(&add.to_string());
+    }
+
+    #[test]
+    fn add_http() {
+        let add = AddHttpBuilder::builder()
+            .checksum("sha256::123")
+            .src("http://example.com/foobar")
+            .dest("/")
+            .build().unwrap();
+        let expected = expect!["ADD --checksum=sha256::123 http://example.com/foobar /"];
+        expected.assert_eq(&add.to_string());
+    }
+
+    #[test]
+    fn add_git() {
+        let add = AddGitBuilder::builder()
+            .keep_git_dir(true)
+            .git_ref("https://github.com/moby/buildkit.git#v0.10.1")
+            .dir("/buildkit")
+            .build().unwrap();
+        let expected = expect!["ADD --keep-git-dir=true https://github.com/moby/buildkit.git#v0.10.1 /buildkit"];
+        expected.assert_eq(&add.to_string());
     }
 }
