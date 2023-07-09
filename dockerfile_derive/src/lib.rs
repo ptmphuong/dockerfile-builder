@@ -308,12 +308,12 @@ struct AttrData {
 
 const EXPECT_ATTR_TEMPLATE: &str = r#"Expected 
 #[instruction_builder(
-    instruction_name = ..., 
-    value_method = ...
+    instruction_name = <name>, 
+    value_method = <method>,
 )]"#;
 
 const EXPECT_EACH_ATTR_TEMPLATE: &str = r#"Expected 
-#[instruction_builder(each = ...)]"#;
+#[instruction_builder(each = <arg>)]"#;
 
 fn get_each_attr(attr: &Vec<syn::Attribute>, struct_ident: &syn::Ident) -> Result<syn::Ident, proc_macro2::TokenStream> {
     if attr.len() != 1 {
