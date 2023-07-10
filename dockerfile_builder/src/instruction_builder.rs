@@ -62,7 +62,7 @@
 //! ```
 //!
 
-use crate::instruction::{FROM, RUN, CMD, ENV, EXPOSE, LABEL, ADD, COPY, ARG, ENTRYPOINT};
+use crate::instruction::{FROM, RUN, CMD, ENV, EXPOSE, LABEL, ADD, COPY, ENTRYPOINT, VOLUME, ARG};
 use dockerfile_derive::InstructionBuilder;
 
 /// Builder struct for `FROM` instruction
@@ -256,6 +256,31 @@ impl LabelBuilder {
 }
 
 
+/// Builder struct for `EXPOSE` instruction
+/// * `EXPOSE <port>`
+/// or
+/// * `EXPOSE <port>/<protocol>`
+#[derive(Debug, InstructionBuilder)]
+#[instruction_builder(
+    instruction_name = EXPOSE,
+    value_method = value,
+)]
+pub struct ExposeBuilder {
+    pub port: u16,
+    pub protocol: Option<String>,
+}
+
+impl ExposeBuilder {
+    fn value(&self) -> Result<String, String> {
+        Ok(format!(
+            "{}{}", 
+            self.port, 
+            self.protocol.as_ref().map(|p| format!("/{}", p)).unwrap_or_default()
+        ))
+    }
+}
+
+
 /// Builder struct for `ADD` instruction (standard form)
 /// * `ADD [--chown=<chown>] [--chmod=<chmod>] [--checksum=<checksum>] <src>... <dest>`
 #[derive(Debug, InstructionBuilder)]
@@ -415,6 +440,26 @@ impl EntrypointExecBuilder {
 }
 
 
+/// Builder struct for `VOLUME` instruction
+/// 
+/// [VOLUME]: dockerfile_builder::instruction::VOLUME
+#[derive(Debug, InstructionBuilder)]
+#[instruction_builder(
+    instruction_name = VOLUME, 
+    value_method = value,
+)]
+pub struct VolumeBuilder {
+    #[instruction_builder(each = path)]
+    pub paths: Vec<String>,
+}
+
+impl VolumeBuilder {
+    fn value(&self) -> Result<String, String> {
+        Ok(format!("{}", self.paths.join(" ")))
+    }
+}
+
+
 /// Builder struct for `ARG` instruction
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
@@ -433,30 +478,6 @@ impl ArgBuilder {
             None => self.name.to_string(),
         };
         Ok(value)
-    }
-}
-
-/// Builder struct for `EXPOSE` instruction
-/// * `EXPOSE <port>`
-/// or
-/// * `EXPOSE <port>/<protocol>`
-#[derive(Debug, InstructionBuilder)]
-#[instruction_builder(
-    instruction_name = EXPOSE,
-    value_method = value,
-)]
-pub struct ExposeBuilder {
-    pub port: u16,
-    pub protocol: Option<String>,
-}
-
-impl ExposeBuilder {
-    fn value(&self) -> Result<String, String> {
-        Ok(format!(
-            "{}{}", 
-            self.port, 
-            self.protocol.as_ref().map(|p| format!("/{}", p)).unwrap_or_default()
-        ))
     }
 }
 
@@ -694,5 +715,15 @@ mod tests {
             .build().unwrap();
         let expected = expect![r#"ENTRYPOINT ["top", "-b"]"#];
         expected.assert_eq(&entrypoint_exec_form.to_string());
+    }
+
+    #[test]
+    fn volume() {
+        let volume = VolumeBuilder::builder()
+            .path("/myvol1")
+            .path("/myvol2")
+            .build().unwrap();
+        let expected = expect![r#"VOLUME /myvol1 /myvol2"#];
+        expected.assert_eq(&volume.to_string());
     }
 }

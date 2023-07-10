@@ -12,6 +12,7 @@ pub enum Instruction {
     ADD(ADD),
     COPY(COPY),
     ENTRYPOINT(ENTRYPOINT),
+    VOLUME(VOLUME),
     ARG(ARG),
     ANY(String),
 }
