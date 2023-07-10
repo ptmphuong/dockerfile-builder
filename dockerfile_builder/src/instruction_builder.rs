@@ -62,7 +62,7 @@
 //! ```
 //!
 
-use crate::instruction::{FROM, RUN, CMD, ENV, EXPOSE, LABEL, ADD, COPY, ENTRYPOINT, VOLUME, USER, WORKDIR, ARG};
+use crate::instruction::{FROM, RUN, CMD, ENV, EXPOSE, LABEL, ADD, COPY, ENTRYPOINT, VOLUME, USER, WORKDIR, ARG, ONBUILD, Instruction};
 use dockerfile_derive::InstructionBuilder;
 
 /// Builder struct for [`FROM`] instruction
@@ -522,7 +522,11 @@ impl WorkdirBuilder {
 }
 
 
-/// Builder struct for `ARG` instruction
+/// Builder struct for [`ARG`] instruction
+/// * `ARG <name>[=<value>]`
+///
+/// [ARG]: dockerfile_builder::instruction::ARG
+
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
     instruction_name = ARG,
@@ -542,6 +546,32 @@ impl ArgBuilder {
         Ok(value)
     }
 }
+
+
+/// Builder struct for [`ONBUILD`] instruction
+/// * `ONBUILD <INSTRUCTION>`
+///
+/// [ONBUILD]: dockerfile_builder::instruction::ONBUILD
+
+#[derive(Debug, InstructionBuilder)]
+#[instruction_builder(
+    instruction_name = ONBUILD,
+    value_method = value,
+)]
+pub struct OnbuildBuilder {
+    pub instruction: Instruction,
+}
+
+impl OnbuildBuilder {
+    fn value(&self) -> Result<String, String> {
+        match &self.instruction {
+            Instruction::ONBUILD(_) => Err("Chaining ONBUILD instructions using ONBUILD ONBUILD isn’t allowed".to_string()),
+            Instruction::FROM(_) => Err("ONBUILD instruction may not trigger FROM instruction".to_string()),
+            ins => Ok(ins.to_string()),
+        }
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -811,5 +841,55 @@ mod tests {
             .build().unwrap();
         let expected = expect![[r#"WORKDIR /path/to/workdir"#]];
         expected.assert_eq(&workdir.to_string());
+    }
+
+    #[test]
+    fn arg() {
+        let arg = ArgBuilder::builder()
+            .name("user1")
+            .build().unwrap();
+        let expected = expect![[r#"ARG user1"#]];
+        expected.assert_eq(&arg.to_string());
+
+        let arg = ArgBuilder::builder()
+            .name("user1")
+            .value("someuser")
+            .build().unwrap();
+        let expected = expect![[r#"ARG user1=someuser"#]];
+        expected.assert_eq(&arg.to_string());
+    }
+
+    #[test]
+    fn onbuild() {
+        let onbuild = OnbuildBuilder::builder()
+            .instruction(Instruction::ADD(ADD::from(". /app/src")))
+            .build().unwrap();
+        let expected = expect![[r#"ONBUILD ADD . /app/src"#]];
+        expected.assert_eq(&onbuild.to_string());
+    }
+
+    #[test]
+    fn onbuild_err() {
+        let onbuild = OnbuildBuilder::builder()
+            .instruction(Instruction::ONBUILD(ONBUILD::from("RUN somecommand")))
+            .build();
+        match onbuild {
+            Ok(_) => panic!("Chaining Onbuild instructions. Expect test to fail"),
+            Err(e) => assert_eq!(
+                e.to_string(),
+                "Chaining ONBUILD instructions using ONBUILD ONBUILD isn’t allowed".to_string(),
+            ),
+        }
+
+        let onbuild = OnbuildBuilder::builder()
+            .instruction(Instruction::FROM(FROM::from("someimage")))
+            .build();
+        match onbuild {
+            Ok(_) => panic!("ONBUILD instruction may not trigger FROM instruction. Expect test to fail"),
+            Err(e) => assert_eq!(
+                e.to_string(),
+                "ONBUILD instruction may not trigger FROM instruction".to_string(),
+            ),
+        }
     }
 }

@@ -1,7 +1,7 @@
 use dockerfile_derive::InstructionInit;
 
 //#[derive(Debug, Clone, Eq, PartialEq)]
-#[derive(Debug, InstructionInit, Eq, PartialEq)]
+#[derive(Debug, InstructionInit, Clone, Eq, PartialEq)]
 pub enum Instruction {
     FROM(FROM),
     ENV(ENV),
@@ -16,6 +16,7 @@ pub enum Instruction {
     USER(USER),
     WORKDIR(WORKDIR),
     ARG(ARG),
+    ONBUILD(ONBUILD),
     ANY(String),
 }
 
