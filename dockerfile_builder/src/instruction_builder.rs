@@ -13,6 +13,7 @@
 //! `ExposeBuilder` is the builder struct for `Expose`.
 //!
 //! ```rust
+//! #[derive(Debug, InstructionBuilder)]
 //! pub struct ExposeBuilder {
 //!     pub port: u16,
 //!     pub protocol: Option<String>,
@@ -45,8 +46,10 @@
 //! `RunBuilder` is the builder struct for `Run`.
 //!
 //! ```rust
+//! #[derive(Debug, InstructionBuilder)]
 //! pub struct RunBuilder {
-//!     pub commands: Vec<String>,
+//!     #[instruction_builder(each = param)]
+//!     pub params: Vec<String>,
 //! }
 //! ```
 //!
@@ -54,8 +57,8 @@
 //! ```rust
 //! use dockerfile_builder::instruction_builder::RunBuilder;
 //! let run = RunBuilder::builder()
-//!     .command("source $HOME/.bashrc")
-//!     .command("echo $HOME")
+//!     .param("source $HOME/.bashrc")
+//!     .param("echo $HOME")
 //!     .build()
 //!     .unwrap();
 //! ```
@@ -136,7 +139,7 @@ impl EnvBuilder {
 /// Builder struct for `RUN` instruction (shell form)
 /// 
 /// RunBuilder constructs the shell form for [`RUN`] by default.
-/// * `RUN <command>`
+/// * `RUN command param1 param2`
 ///
 /// To construct the exec form, use [`RunExecBuilder`]
 ///
@@ -147,13 +150,13 @@ impl EnvBuilder {
     value_method = value,
 )]
 pub struct RunBuilder {
-    #[instruction_builder(each = command)]
-    pub commands: Vec<String>,
+    #[instruction_builder(each = param)]
+    pub params: Vec<String>,
 }
 
 impl RunBuilder {
     fn value(&self) -> Result<String, String> {
-        Ok(format!("{}", self.commands.join(" && \\ \n")))
+        Ok(format!("{}", self.params.join(" && \\ \n")))
     }
 }
 
@@ -172,13 +175,13 @@ impl RunBuilder {
     value_method = value,
 )]
 pub struct RunExecBuilder {
-    #[instruction_builder(each = command)]
-    pub commands: Vec<String>,
+    #[instruction_builder(each = param)]
+    pub params: Vec<String>,
 }
 
 impl RunExecBuilder {
     fn value(&self) -> Result<String, String> {
-        Ok(format!(r#"["{}"]"#, self.commands.join(r#"",""#)))
+        Ok(format!(r#"["{}"]"#, self.params.join(r#"",""#)))
     }
 }
 
@@ -197,13 +200,13 @@ impl RunExecBuilder {
     value_method = value,
 )]
 pub struct CmdBuilder {
-    #[instruction_builder(each = command)]
-    pub commands: Vec<String>,
+    #[instruction_builder(each = param)]
+    pub params: Vec<String>,
 }
 
 impl CmdBuilder {
     fn value(&self) -> Result<String, String> {
-        Ok(format!("{}", self.commands.join(" ")))
+        Ok(format!("{}", self.params.join(" ")))
     }
 }
 
@@ -222,13 +225,13 @@ impl CmdBuilder {
     value_method = value,
 )]
 pub struct CmdExecBuilder {
-    #[instruction_builder(each = command)]
-    pub commands: Vec<String>,
+    #[instruction_builder(each = param)]
+    pub params: Vec<String>,
 }
 
 impl CmdExecBuilder {
     fn value(&self) -> Result<String, String> {
-        Ok(format!(r#"["{}"]"#, self.commands.join(r#"",""#)))
+        Ok(format!(r#"["{}"]"#, self.params.join(r#"",""#)))
     }
 }
 
@@ -495,15 +498,15 @@ mod tests {
 
     #[test]
     fn run() {
-        let commands = vec!["source $HOME/.bashrc".to_string(), "echo $HOME".to_string()];
+        let params = vec!["source $HOME/.bashrc".to_string(), "echo $HOME".to_string()];
 
-        let run_shell_form = RunBuilder::builder().commands(commands.clone()).build().unwrap();
+        let run_shell_form = RunBuilder::builder().params(params.clone()).build().unwrap();
         let expected = expect![[r#"
             RUN source $HOME/.bashrc && \ 
             echo $HOME"#]];
         expected.assert_eq(&run_shell_form.to_string());
 
-        let run_exec_form = RunExecBuilder::builder().commands(commands).build().unwrap();
+        let run_exec_form = RunExecBuilder::builder().params(params).build().unwrap();
         let expected = expect![[r#"RUN ["source $HOME/.bashrc","echo $HOME"]"#]];
         expected.assert_eq(&run_exec_form.to_string());
     }
@@ -511,8 +514,8 @@ mod tests {
     #[test]
     fn run_each() {
         let run_shell_form = RunBuilder::builder()
-            .command("source $HOME/.bashrc")
-            .command("echo $HOME")
+            .param("source $HOME/.bashrc")
+            .param("echo $HOME")
             .build()
             .unwrap();
         let expected = expect![[r#"
@@ -521,8 +524,8 @@ mod tests {
         expected.assert_eq(&run_shell_form.to_string());
 
         let run_exec_form = RunExecBuilder::builder()
-            .command("source $HOME/.bashrc")
-            .command("echo $HOME")
+            .param("source $HOME/.bashrc")
+            .param("echo $HOME")
             .build()
             .unwrap();
         let expected = expect![[r#"RUN ["source $HOME/.bashrc","echo $HOME"]"#]];
@@ -531,13 +534,13 @@ mod tests {
 
     #[test]
     fn cmd() {
-        let commands = vec![r#"echo "This is a test.""#.to_string(), "|".to_string(), "wc -".to_string()];
-        let cmd_shell_form = CmdBuilder::builder().commands(commands).build().unwrap();
+        let params = vec![r#"echo "This is a test.""#.to_string(), "|".to_string(), "wc -".to_string()];
+        let cmd_shell_form = CmdBuilder::builder().params(params).build().unwrap();
         let expected = expect![[r#"CMD echo "This is a test." | wc -"#]];
         expected.assert_eq(&cmd_shell_form.to_string());
 
-        let commands = vec!["/usr/bin/wc".to_string(),"--help".to_string()];
-        let cmd_exec_form = CmdExecBuilder::builder().commands(commands).build().unwrap();
+        let params = vec!["/usr/bin/wc".to_string(),"--help".to_string()];
+        let cmd_exec_form = CmdExecBuilder::builder().params(params).build().unwrap();
         let expected = expect![[r#"CMD ["/usr/bin/wc","--help"]"#]];
         expected.assert_eq(&cmd_exec_form.to_string());
     }
