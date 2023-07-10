@@ -62,7 +62,8 @@
 //! ```
 //!
 
-use crate::instruction::{FROM, RUN, CMD, ENV, EXPOSE, LABEL, ADD, COPY, ENTRYPOINT, VOLUME, USER, WORKDIR, ARG, ONBUILD, Instruction};
+use crate::instruction::{FROM, RUN, CMD, ENV, EXPOSE, LABEL, ADD, COPY, ENTRYPOINT, 
+    VOLUME, USER, WORKDIR, ARG, ONBUILD, STOPSIGNAL, HEALTHCHECK, SHELL, Instruction};
 use dockerfile_derive::InstructionBuilder;
 
 /// Builder struct for [`FROM`] instruction
@@ -496,7 +497,7 @@ impl UserBuilder {
         Ok(format!(
             "{}{}", 
             self.user, 
-            self.group.as_ref().map(|p| format!(":{}", p)).unwrap_or_default()
+            self.group.as_ref().map(|g| format!(":{}", g)).unwrap_or_default()
         ))
     }
 }
@@ -526,7 +527,6 @@ impl WorkdirBuilder {
 /// * `ARG <name>[=<value>]`
 ///
 /// [ARG]: dockerfile_builder::instruction::ARG
-
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
     instruction_name = ARG,
@@ -552,7 +552,6 @@ impl ArgBuilder {
 /// * `ONBUILD <INSTRUCTION>`
 ///
 /// [ONBUILD]: dockerfile_builder::instruction::ONBUILD
-
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
     instruction_name = ONBUILD,
@@ -569,6 +568,78 @@ impl OnbuildBuilder {
             Instruction::FROM(_) => Err("ONBUILD instruction may not trigger FROM instruction".to_string()),
             ins => Ok(ins.to_string()),
         }
+    }
+}
+
+
+/// Builder struct for [`STOPSIGNAL`] instruction
+/// * `STOPSIGNAL <signal>`
+///
+/// [STOPSIGNAL]: dockerfile_builder::instruction::STOPSIGNAL
+#[derive(Debug, InstructionBuilder)]
+#[instruction_builder(
+    instruction_name = STOPSIGNAL,
+    value_method = value,
+)]
+pub struct StopsignalBuilder {
+    pub signal: String,
+}
+
+impl StopsignalBuilder {
+    fn value(&self) -> Result<String, String> {
+        Ok(format!("{}", self.signal))
+    }
+}
+
+
+/// Builder struct for [`HEALTHCHECK`] instruction
+/// * `HEALTHCHECK [--interval=DURATION] [--timeout=DURATION] 
+///                [--start-period=DURATION] [--retries=N] CMD <command>`
+/// [HEALTHCHECK]: dockerfile_builder::instruction::HEALTHCHECK
+#[derive(Debug, InstructionBuilder)]
+#[instruction_builder(
+    instruction_name = HEALTHCHECK,
+    value_method = value,
+)]
+pub struct HealthcheckBuilder {
+    pub cmd: CMD,
+    pub interval: Option<i32>,
+    pub timeout: Option<i32>,
+    pub start_period: Option<i32>,
+    pub retries: Option<i32>,
+}
+
+impl HealthcheckBuilder {
+    fn value(&self) -> Result<String, String> {
+        Ok(format!(
+            "{}{}{}{}{}", 
+            self.interval.as_ref().map(|i| format!("--interal={} ", i)).unwrap_or_default(),
+            self.timeout.as_ref().map(|t| format!("--timeout={} ", t)).unwrap_or_default(),
+            self.start_period.as_ref().map(|s| format!("--start-period={} ", s)).unwrap_or_default(),
+            self.retries.as_ref().map(|r| format!("--retries={} ", r)).unwrap_or_default(),
+            self.cmd.to_string(), 
+        ))
+    }
+}
+
+
+/// Builder struct for [`SHELL`] instruction
+/// * `SHELL ["executable", "parameters"]`
+///
+/// [SHELL]: dockerfile_builder::instruction::SHELL
+#[derive(Debug, InstructionBuilder)]
+#[instruction_builder(
+    instruction_name = SHELL, 
+    value_method = value,
+)]
+pub struct ShellBuilder {
+    #[instruction_builder(each = param)]
+    pub params: Vec<String>,
+}
+
+impl ShellBuilder {
+    fn value(&self) -> Result<String, String> {
+        Ok(format!(r#"["{}"]"#, self.params.join(r#"", ""#)))
     }
 }
 
@@ -891,5 +962,42 @@ mod tests {
                 "ONBUILD instruction may not trigger FROM instruction".to_string(),
             ),
         }
+    }
+
+    #[test]
+    fn stopsignal() {
+        let stopsignal = StopsignalBuilder::builder()
+            .signal("SIGKILL").build().unwrap();
+        let expected = expect![["STOPSIGNAL SIGKILL"]];
+        expected.assert_eq(&stopsignal.to_string());
+    }
+
+    #[test]
+    fn healthcheck() {
+        let healthcheck = HealthcheckBuilder::builder()
+            .cmd(CMD::from("curl -f http://localhost/"))
+            .build().unwrap();
+        let expected = expect![["HEALTHCHECK CMD curl -f http://localhost/"]];
+        expected.assert_eq(&healthcheck.to_string());
+
+        let healthcheck = HealthcheckBuilder::builder()
+            .cmd(CMD::from("curl -f http://localhost/"))
+            .interval(15)
+            .timeout(200)
+            .start_period(5)
+            .retries(5)
+            .build().unwrap();
+        let expected = expect!["HEALTHCHECK --interal=15 --timeout=200 --start-period=5 --retries=5 CMD curl -f http://localhost/"];
+        expected.assert_eq(&healthcheck.to_string());
+    }
+
+    #[test]
+    fn shell() {
+        let shell = ShellBuilder::builder()
+            .param("powershell")
+            .param("-command")
+            .build().unwrap();
+        let expected = expect![[r#"SHELL ["powershell", "-command"]"#]];
+        expected.assert_eq(&shell.to_string());
     }
 }

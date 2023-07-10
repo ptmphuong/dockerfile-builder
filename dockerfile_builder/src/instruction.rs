@@ -17,6 +17,9 @@ pub enum Instruction {
     WORKDIR(WORKDIR),
     ARG(ARG),
     ONBUILD(ONBUILD),
+    STOPSIGNAL(STOPSIGNAL),
+    HEALTHCHECK(HEALTHCHECK),
+    SHELL(SHELL),
     ANY(String),
 }
 
