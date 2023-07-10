@@ -13,7 +13,6 @@
 //! `ExposeBuilder` is the builder struct for `Expose`.
 //!
 //! ```rust
-//! #[derive(Debug, InstructionBuilder)]
 //! pub struct ExposeBuilder {
 //!     pub port: u16,
 //!     pub protocol: Option<String>,
@@ -45,8 +44,7 @@
 //!
 //! `RunBuilder` is the builder struct for `Run`.
 //!
-//! ```rust
-//! #[derive(Debug, InstructionBuilder)]
+//! ```ignore
 //! pub struct RunBuilder {
 //!     #[instruction_builder(each = param)]
 //!     pub params: Vec<String>,
@@ -54,7 +52,7 @@
 //! ```
 //!
 //! `Run` can be constructed as follow:
-//! ```rust
+//! ```
 //! use dockerfile_builder::instruction_builder::RunBuilder;
 //! let run = RunBuilder::builder()
 //!     .param("source $HOME/.bashrc")
@@ -64,7 +62,7 @@
 //! ```
 //!
 
-use crate::instruction::{FROM, RUN, CMD, ENV, EXPOSE, LABEL, ADD, COPY, ARG};
+use crate::instruction::{FROM, RUN, CMD, ENV, EXPOSE, LABEL, ADD, COPY, ARG, ENTRYPOINT};
 use dockerfile_derive::InstructionBuilder;
 
 /// Builder struct for `FROM` instruction
@@ -181,7 +179,7 @@ pub struct RunExecBuilder {
 
 impl RunExecBuilder {
     fn value(&self) -> Result<String, String> {
-        Ok(format!(r#"["{}"]"#, self.params.join(r#"",""#)))
+        Ok(format!(r#"["{}"]"#, self.params.join(r#"", ""#)))
     }
 }
 
@@ -231,7 +229,7 @@ pub struct CmdExecBuilder {
 
 impl CmdExecBuilder {
     fn value(&self) -> Result<String, String> {
-        Ok(format!(r#"["{}"]"#, self.params.join(r#"",""#)))
+        Ok(format!(r#"["{}"]"#, self.params.join(r#"", ""#)))
     }
 }
 
@@ -363,6 +361,56 @@ impl CopyBuilder {
             self.src, 
             self.dest,
         ))
+    }
+}
+
+
+/// Builder struct for `ENTRYPOINT` instruction (shell form)
+/// 
+/// EntrypointBuilder constructs the shell form for [`ENTRYPOINT`] by default.
+/// * `ENTRYPOINT command param1 param2`
+///
+/// To construct the exec form, use [`EntrypointExecBuilder`]
+///
+/// [ENTRYPOINT]: dockerfile_builder::instruction::ENTRYPOINT
+#[derive(Debug, InstructionBuilder)]
+#[instruction_builder(
+    instruction_name = ENTRYPOINT, 
+    value_method = value,
+)]
+pub struct EntrypointBuilder {
+    #[instruction_builder(each = param)]
+    pub params: Vec<String>,
+}
+
+impl EntrypointBuilder {
+    fn value(&self) -> Result<String, String> {
+        Ok(format!("{}", self.params.join(" ")))
+    }
+}
+
+
+/// Builder struct for `ENTRYPOINT` instruction (exec form)
+/// 
+/// EntrypointExecBuilder constructs the exec form for [`ENTRYPOINT`].
+/// * `ENTRYPOINT ["executable", "param1", "param2"]`
+///
+/// To construct the shell form, use [`EntrypointBuilder`]
+///
+/// [ENTRYPOINT]: dockerfile_builder::instruction::ENTRYPOINT
+#[derive(Debug, InstructionBuilder)]
+#[instruction_builder(
+    instruction_name = ENTRYPOINT, 
+    value_method = value,
+)]
+pub struct EntrypointExecBuilder {
+    #[instruction_builder(each = param)]
+    pub params: Vec<String>,
+}
+
+impl EntrypointExecBuilder {
+    fn value(&self) -> Result<String, String> {
+        Ok(format!(r#"["{}"]"#, self.params.join(r#"", ""#)))
     }
 }
 
@@ -507,7 +555,7 @@ mod tests {
         expected.assert_eq(&run_shell_form.to_string());
 
         let run_exec_form = RunExecBuilder::builder().params(params).build().unwrap();
-        let expected = expect![[r#"RUN ["source $HOME/.bashrc","echo $HOME"]"#]];
+        let expected = expect![[r#"RUN ["source $HOME/.bashrc", "echo $HOME"]"#]];
         expected.assert_eq(&run_exec_form.to_string());
     }
 
@@ -528,7 +576,7 @@ mod tests {
             .param("echo $HOME")
             .build()
             .unwrap();
-        let expected = expect![[r#"RUN ["source $HOME/.bashrc","echo $HOME"]"#]];
+        let expected = expect![[r#"RUN ["source $HOME/.bashrc", "echo $HOME"]"#]];
         expected.assert_eq(&run_exec_form.to_string());
     }
 
@@ -541,7 +589,7 @@ mod tests {
 
         let params = vec!["/usr/bin/wc".to_string(),"--help".to_string()];
         let cmd_exec_form = CmdExecBuilder::builder().params(params).build().unwrap();
-        let expected = expect![[r#"CMD ["/usr/bin/wc","--help"]"#]];
+        let expected = expect![[r#"CMD ["/usr/bin/wc", "--help"]"#]];
         expected.assert_eq(&cmd_exec_form.to_string());
     }
 
@@ -628,5 +676,23 @@ mod tests {
             .build().unwrap();
         let expected = expect!["COPY --link foo/ bar/"];
         expected.assert_eq(&copy.to_string());
+    }
+
+    #[test]
+    fn entrypoint() {
+        let entrypoint_shell_form = EntrypointBuilder::builder()
+            .param("exec")
+            .param("top")
+            .param("-b")
+            .build().unwrap();
+        let expected = expect![r#"ENTRYPOINT exec top -b"#];
+        expected.assert_eq(&entrypoint_shell_form.to_string());
+
+        let entrypoint_exec_form = EntrypointExecBuilder::builder()
+            .param("top")
+            .param("-b")
+            .build().unwrap();
+        let expected = expect![r#"ENTRYPOINT ["top", "-b"]"#];
+        expected.assert_eq(&entrypoint_exec_form.to_string());
     }
 }

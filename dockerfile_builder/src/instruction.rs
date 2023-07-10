@@ -11,6 +11,7 @@ pub enum Instruction {
     EXPOSE(EXPOSE),
     ADD(ADD),
     COPY(COPY),
+    ENTRYPOINT(ENTRYPOINT),
     ARG(ARG),
     ANY(String),
 }
