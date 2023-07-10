@@ -791,13 +791,13 @@ mod tests {
         let expose = ExposeBuilder::builder()
             .port(80)
             .build().unwrap();
-        let expected = expect![[r#"EXPOSE 80"#]];
+        let expected = expect!["EXPOSE 80"];
         expected.assert_eq(&expose.to_string());
 
         let expose = ExposeBuilder::builder()
             .port(80).protocol("udp")
             .build().unwrap();
-        let expected = expect![[r#"EXPOSE 80/udp"#]];
+        let expected = expect!["EXPOSE 80/udp"];
         expected.assert_eq(&expose.to_string());
     }
 
@@ -869,14 +869,14 @@ mod tests {
             .param("top")
             .param("-b")
             .build().unwrap();
-        let expected = expect![r#"ENTRYPOINT exec top -b"#];
+        let expected = expect!["ENTRYPOINT exec top -b"];
         expected.assert_eq(&entrypoint_shell_form.to_string());
 
         let entrypoint_exec_form = EntrypointExecBuilder::builder()
             .param("top")
             .param("-b")
             .build().unwrap();
-        let expected = expect![r#"ENTRYPOINT ["top", "-b"]"#];
+        let expected = expect![[r#"ENTRYPOINT ["top", "-b"]"#]];
         expected.assert_eq(&entrypoint_exec_form.to_string());
     }
 
@@ -886,7 +886,7 @@ mod tests {
             .path("/myvol1")
             .path("/myvol2")
             .build().unwrap();
-        let expected = expect![r#"VOLUME /myvol1 /myvol2"#];
+        let expected = expect!["VOLUME /myvol1 /myvol2"];
         expected.assert_eq(&volume.to_string());
     }
 
@@ -895,13 +895,13 @@ mod tests {
         let user = UserBuilder::builder()
             .user("myuser")
             .build().unwrap();
-        let expected = expect![[r#"USER myuser"#]];
+        let expected = expect!["USER myuser"];
         expected.assert_eq(&user.to_string());
 
         let user = UserBuilder::builder()
             .user("myuser").group("mygroup")
             .build().unwrap();
-        let expected = expect![[r#"USER myuser:mygroup"#]];
+        let expected = expect!["USER myuser:mygroup"];
         expected.assert_eq(&user.to_string());
     }
 
@@ -910,7 +910,7 @@ mod tests {
         let workdir = WorkdirBuilder::builder()
             .path("/path/to/workdir")
             .build().unwrap();
-        let expected = expect![[r#"WORKDIR /path/to/workdir"#]];
+        let expected = expect!["WORKDIR /path/to/workdir"];
         expected.assert_eq(&workdir.to_string());
     }
 
@@ -919,14 +919,14 @@ mod tests {
         let arg = ArgBuilder::builder()
             .name("user1")
             .build().unwrap();
-        let expected = expect![[r#"ARG user1"#]];
+        let expected = expect!["ARG user1"];
         expected.assert_eq(&arg.to_string());
 
         let arg = ArgBuilder::builder()
             .name("user1")
             .value("someuser")
             .build().unwrap();
-        let expected = expect![[r#"ARG user1=someuser"#]];
+        let expected = expect!["ARG user1=someuser"];
         expected.assert_eq(&arg.to_string());
     }
 
@@ -935,7 +935,7 @@ mod tests {
         let onbuild = OnbuildBuilder::builder()
             .instruction(Instruction::ADD(ADD::from(". /app/src")))
             .build().unwrap();
-        let expected = expect![[r#"ONBUILD ADD . /app/src"#]];
+        let expected = expect!["ONBUILD ADD . /app/src"];
         expected.assert_eq(&onbuild.to_string());
     }
 
@@ -968,7 +968,7 @@ mod tests {
     fn stopsignal() {
         let stopsignal = StopsignalBuilder::builder()
             .signal("SIGKILL").build().unwrap();
-        let expected = expect![["STOPSIGNAL SIGKILL"]];
+        let expected = expect!["STOPSIGNAL SIGKILL"];
         expected.assert_eq(&stopsignal.to_string());
     }
 
@@ -977,7 +977,7 @@ mod tests {
         let healthcheck = HealthcheckBuilder::builder()
             .cmd(CMD::from("curl -f http://localhost/"))
             .build().unwrap();
-        let expected = expect![["HEALTHCHECK CMD curl -f http://localhost/"]];
+        let expected = expect!["HEALTHCHECK CMD curl -f http://localhost/"];
         expected.assert_eq(&healthcheck.to_string());
 
         let healthcheck = HealthcheckBuilder::builder()
