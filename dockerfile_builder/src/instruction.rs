@@ -14,6 +14,7 @@ pub enum Instruction {
     ENTRYPOINT(ENTRYPOINT),
     VOLUME(VOLUME),
     USER(USER),
+    WORKDIR(WORKDIR),
     ARG(ARG),
     ANY(String),
 }

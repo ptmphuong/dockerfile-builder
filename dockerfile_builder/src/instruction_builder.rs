@@ -62,7 +62,7 @@
 //! ```
 //!
 
-use crate::instruction::{FROM, RUN, CMD, ENV, EXPOSE, LABEL, ADD, COPY, ENTRYPOINT, VOLUME, USER, ARG};
+use crate::instruction::{FROM, RUN, CMD, ENV, EXPOSE, LABEL, ADD, COPY, ENTRYPOINT, VOLUME, USER, WORKDIR, ARG};
 use dockerfile_derive::InstructionBuilder;
 
 /// Builder struct for [`FROM`] instruction
@@ -475,6 +475,7 @@ impl VolumeBuilder {
     }
 }
 
+
 /// Builder struct for [`USER`] instruction
 /// * `USER <user>`
 /// or
@@ -499,6 +500,28 @@ impl UserBuilder {
         ))
     }
 }
+
+
+/// Builder struct for [`WORKDIR`] instruction
+/// * `WORKDIR <path>`
+///
+/// [WORKDIR]: dockerfile_builder::instruction::WORKDIR
+#[derive(Debug, InstructionBuilder)]
+#[instruction_builder(
+    instruction_name = WORKDIR,
+    value_method = value,
+)]
+pub struct WorkdirBuilder {
+    pub path: String,
+}
+
+impl WorkdirBuilder {
+    fn value(&self) -> Result<String, String> {
+        Ok(format!("{}", self.path))
+    }
+}
+
+
 /// Builder struct for `ARG` instruction
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
@@ -779,5 +802,14 @@ mod tests {
             .build().unwrap();
         let expected = expect![[r#"USER myuser:mygroup"#]];
         expected.assert_eq(&user.to_string());
+    }
+
+    #[test]
+    fn workdir() {
+        let workdir = WorkdirBuilder::builder()
+            .path("/path/to/workdir")
+            .build().unwrap();
+        let expected = expect![[r#"WORKDIR /path/to/workdir"#]];
+        expected.assert_eq(&workdir.to_string());
     }
 }
