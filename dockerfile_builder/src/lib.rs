@@ -92,7 +92,7 @@ impl Dockerfile {
         self
     }
 
-    /// Concatinate multiple ['Instructions'] to Dockerfile
+    /// Concatenate multiple ['Instructions'] to Dockerfile
     ///
     /// [Instruction]: instruction::Instruction
     pub fn concat<T: Into<Instruction>>(mut self, instructions: Vec<T>) -> Self {
@@ -102,7 +102,7 @@ impl Dockerfile {
         self
     }
 
-    /// Concatinate multiple raw strings to Dockerfile
+    /// Concatenate multiple raw strings to Dockerfile
     pub fn concat_any<T: Into<String>>(mut self, instructions: Vec<T>) -> Self {
         for i in instructions {
             self.instructions.push(Instruction::ANY(i.into()));
