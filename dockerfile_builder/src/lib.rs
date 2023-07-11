@@ -78,7 +78,7 @@ pub struct Dockerfile {
 }
 
 impl Dockerfile {
-    /// Push an [`Instruction`] to Dockerfile
+    /// Adds an [`Instruction`] to the end of the Dockerfile
     ///
     /// [Instruction]: instruction::Instruction
     pub fn push<T: Into<Instruction>>(mut self, instruction: T) -> Self {
@@ -86,28 +86,35 @@ impl Dockerfile {
         self
     }
 
-    /// Push any raw string to Dockerfile
+    /// Adds any raw string to the end of the Dockerfile
     pub fn push_any<T: Into<String>>(mut self, instruction: T) -> Self {
         self.instructions.push(Instruction::ANY(instruction.into()));
         self
     }
 
-    /// Concatenate multiple ['Instructions'] to Dockerfile
+    /// Appends multiple ['Instruction']s to the end of the Dockerfile
     ///
     /// [Instruction]: instruction::Instruction
-    pub fn concat<T: Into<Instruction>>(mut self, instructions: Vec<T>) -> Self {
+    pub fn append<T: Into<Instruction>>(mut self, instructions: Vec<T>) -> Self {
         for i in instructions {
             self.instructions.push(i.into());
         }
         self
     }
 
-    /// Concatenate multiple raw strings to Dockerfile
-    pub fn concat_any<T: Into<String>>(mut self, instructions: Vec<T>) -> Self {
+    /// Appends multiple raw strings to the end of the Dockerfile
+    pub fn append_any<T: Into<String>>(mut self, instructions: Vec<T>) -> Self {
         for i in instructions {
             self.instructions.push(Instruction::ANY(i.into()));
         }
         self
+    }
+
+    /// Retrieves the vec of `Instruction`s from Dockerfile
+    ///
+    /// [Instruction]: instruction::Instruction
+    pub fn into_inner(self) -> Vec<Instruction> {
+        self.instructions
     }
 }
 
@@ -130,7 +137,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn push_from_instruction() {
+    fn quick_start() {
         let dockerfile = Dockerfile::default()
             .push(RUN::from("echo $HOME"))
             .push(EXPOSE::from("80/tcp"))
@@ -144,7 +151,7 @@ mod tests {
     }
 
     #[test]
-    fn push_from_instruction_builder() {
+    fn build_dockerfile() {
         // 2 ways of constructing Instruction.
 
         // Directly from String/&str
@@ -167,7 +174,7 @@ mod tests {
     }
 
     #[test]
-    fn concat_from_instruction() {
+    fn append_instructions() {
         let comments = vec![
             "# syntax=docker/dockerfile:1",
             "# escape=`",
@@ -178,8 +185,8 @@ mod tests {
         ];
 
         let dockerfile = Dockerfile::default()
-            .concat_any(comments)
-            .concat(instruction_vec);
+            .append_any(comments)
+            .append(instruction_vec);
 
         let expected = expect![[r#"
             # syntax=docker/dockerfile:1
