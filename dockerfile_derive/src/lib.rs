@@ -38,7 +38,25 @@ pub fn instruction_init(input: TokenStream) -> TokenStream {
         .filter(|v| &v.ident != "ANY")
         .map(|v| {
             let variant = &v.ident;
+            let variant_lower = &variant.to_string().to_lowercase();
+            let builder_name = format!("{}Builder", utils::make_title_case(variant_lower.to_string()));
+
+            let doc_definition = format!("`{}` instruction. ", variant);
+            let doc_instruction = format!(r#"Create a new `{}` from string literal using `::from()`:
+```
+# use dockerfile_builder::instruction::{};
+let {} = {}::from("some instruction value");
+```"#, variant, variant, variant_lower, variant);
+            let doc_link_builder = format!("* See how `{}` can be built with `{}` [here](crate::instruction_builder::{})", variant, builder_name, builder_name);
+            let doc_link_reference = format!("* Link to Dockerfile Reference [here](https://docs.docker.com/engine/reference/builder/#{})", variant_lower);
             quote! {
+                #[doc = #doc_definition]
+                ///
+                #[doc = #doc_instruction]
+                ///
+                #[doc = #doc_link_builder]
+                ///
+                #[doc = #doc_link_reference]
                 #[derive(Debug, Clone, Eq, PartialEq)]
                 pub struct #variant {
                     pub value: String,
@@ -51,8 +69,10 @@ pub fn instruction_init(input: TokenStream) -> TokenStream {
         .filter(|v| &v.ident != "ANY")
         .map(|v| {
             let variant = &v.ident;
+            let gen_doc = format!("Construct a new {} instruction from raw string", variant);
             quote! {
                 impl<T> std::convert::From<T> for #variant where T: Into<String> {
+                    #[doc = #gen_doc]
                     fn from(value: T) -> Self {
                         #variant { 
                             value: value.into(),
@@ -294,4 +314,3 @@ pub fn instruction_builder(input: TokenStream) -> TokenStream {
         }
     }.into()
 }
-

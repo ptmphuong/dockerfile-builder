@@ -149,3 +149,10 @@ pub(crate) fn verify_attr_punct<T: quote::ToTokens>(token: Option<TokenTree>, ex
     Ok(())
 }
 
+pub(crate) fn make_title_case (s1: String) -> String {
+  let mut c = s1.chars();
+  match c.next() {
+    None => String::new(),
+    Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+  }
+}
