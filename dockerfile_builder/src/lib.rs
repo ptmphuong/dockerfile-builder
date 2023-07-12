@@ -6,10 +6,10 @@
 //!
 //! ## Build Dockerfile
 //!
-//! [Dockerfile] contains a list of [Instructions].
+//! [Dockerfile] contains a list of [`Instruction`]s.
 //!
 //! [Dockerfile]: Dockerfile
-//! [Instructions]: instruction
+//! [Instruction]: instruction::Instruction
 //!
 //!```rust
 //!use dockerfile_builder::Dockerfile;
@@ -32,8 +32,7 @@
 //!
 //! ## Dockerfile Instructions
 //!
-//! [Instruction] can be created from String or from [Instruction Builder].
-//!
+//! [`Instruction`] can be created from String or from [Instruction Builder]. 
 //! Instruction Builders provide structured and type-safe interfaces to build instructions.
 //!
 //! [Instruction]: instruction::Instruction
@@ -72,6 +71,7 @@ use instruction::Instruction;
 pub mod instruction;
 pub mod instruction_builder;
 
+/// Dockerfile builder
 #[derive(Debug, Default)]
 pub struct Dockerfile {
     instructions: Vec<Instruction>,
@@ -92,7 +92,7 @@ impl Dockerfile {
         self
     }
 
-    /// Appends multiple ['Instruction']s to the end of the Dockerfile
+    /// Appends multiple [`Instruction`]s to the end of the Dockerfile
     ///
     /// [Instruction]: instruction::Instruction
     pub fn append<T: Into<Instruction>>(mut self, instructions: Vec<T>) -> Self {
@@ -102,7 +102,7 @@ impl Dockerfile {
         self
     }
 
-    /// Appends multiple raw strings to the end of the Dockerfile
+    /// Appends multiple strings to the end of the Dockerfile
     pub fn append_any<T: Into<String>>(mut self, instructions: Vec<T>) -> Self {
         for i in instructions {
             self.instructions.push(Instruction::ANY(i.into()));
@@ -110,7 +110,7 @@ impl Dockerfile {
         self
     }
 
-    /// Retrieves the vec of `Instruction`s from Dockerfile
+    /// Retrieves [`Instruction`] vec from Dockerfile
     ///
     /// [Instruction]: instruction::Instruction
     pub fn into_inner(self) -> Vec<Instruction> {
