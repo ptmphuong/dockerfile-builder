@@ -614,6 +614,18 @@ impl AddGitBuilder {
 /// reference](https://docs.docker.com/engine/reference/builder/#copy):
 /// * `COPY [--chown=<chown>] [--chmod=<chmod>] [--from=<from>] [--link] <src>... <dest>`
 ///
+/// Example:
+/// ```
+/// # use dockerfile_builder::instruction_builder::CopyBuilder;
+/// let copy = CopyBuilder::builder()
+///     .chown("55:mygroup")
+///     .chmod(644)
+///     .src("files*")
+///     .dest("/somedir/")
+///     .build().unwrap();
+/// assert_eq!(copy.to_string(), "COPY --chown=55:mygroup --chmod=644 files* /somedir/");
+/// ```
+///
 /// [COPY]: dockerfile_builder::instruction::COPY
 // TODO: Add flag [--from=]
 #[derive(Debug, InstructionBuilder)]
@@ -744,7 +756,6 @@ impl EntrypointBuilder {
 /// To construct the shell form, use [`EntrypointBuilder`]
 ///
 /// [ENTRYPOINT]: dockerfile_builder::instruction::ENTRYPOINT
-// TODO: Fix according to format
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
     instruction_name = ENTRYPOINT,
@@ -971,24 +982,48 @@ impl HealthcheckBuilder {
 ///
 /// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#shell):
-/// * `SHELL ["executable", "parameters"]`
+/// * `SHELL ["executable", "params"]`
+///
+/// Example:
+/// ```
+/// # use dockerfile_builder::instruction_builder::ShellBuilder;
+/// // build SHELL with params
+/// let shell = ShellBuilder::builder()
+///     .executable("cmd")
+///     .param("/S")
+///     .param("/C")
+///     .build().unwrap();
+/// assert_eq!(shell.to_string(), r#"SHELL ["cmd", "/S", "/C"]"#);
+///
+/// // build SHELL with a param vec
+/// let shell = ShellBuilder::builder()
+///     .executable("cmd")
+///     .params(vec!["/S", "/C"])
+///     .build().unwrap();
+/// assert_eq!(shell.to_string(), r#"SHELL ["cmd", "/S", "/C"]"#);
+/// ```
 ///
 /// [SHELL]: dockerfile_builder::instruction::SHELL
-///
-// TODO: Fix according to format
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
     instruction_name = SHELL,
     value_method = value,
 )]
 pub struct ShellBuilder {
+    pub executable: String,
     #[instruction_builder(each = param)]
-    pub params: Vec<String>,
+    pub params: Option<Vec<String>>,
 }
 
 impl ShellBuilder {
     fn value(&self) -> Result<String, String> {
-        Ok(format!(r#"["{}"]"#, self.params.join(r#"", ""#)))
+        let params = match self.params.clone() {
+            Some(param_vec) => {
+                format!(r#", "{}""#, param_vec.join(r#"", ""#))
+            }
+            None => String::new(),
+        };
+        Ok(format!(r#"["{}"{}]"#, self.executable, params))
     }
 }
 
@@ -1101,16 +1136,6 @@ mod tests {
 
     #[test]
     fn copy() {
-        let copy = CopyBuilder::builder()
-            .chown("bin")
-            .chmod(655)
-            .src("files*")
-            .dest("/somedir/")
-            .build()
-            .unwrap();
-        let expected = expect!["COPY --chown=bin --chmod=655 files* /somedir/"];
-        expected.assert_eq(&copy.to_string());
-
         let copy = CopyBuilder::builder()
             .link(true)
             .src("foo/")
@@ -1238,16 +1263,5 @@ mod tests {
             .unwrap();
         let expected = expect!["HEALTHCHECK --interal=15 --timeout=200 --start-period=5 --retries=5 CMD curl -f http://localhost/"];
         expected.assert_eq(&healthcheck.to_string());
-    }
-
-    #[test]
-    fn shell() {
-        let shell = ShellBuilder::builder()
-            .param("powershell")
-            .param("-command")
-            .build()
-            .unwrap();
-        let expected = expect![[r#"SHELL ["powershell", "-command"]"#]];
-        expected.assert_eq(&shell.to_string());
     }
 }

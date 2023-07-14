@@ -6,10 +6,7 @@
 //!
 //! ## Build Dockerfile
 //!
-//! [Dockerfile] contains a list of [`Instruction`]s.
-//!
-//! [Dockerfile]: Dockerfile
-//! [Instruction]: instruction::Instruction
+//! [Dockerfile] contains a list of [`Instruction`](instruction::Instruction).
 //!
 //!```rust
 //!use dockerfile_builder::Dockerfile;
