@@ -154,7 +154,7 @@ pub fn instruction_builder(input: TokenStream) -> TokenStream {
 
         // Custom set method for Vec<String> or Option<Vec<String>
         // These methods can accept Vec<T> where T: Into<String> as argument.
-        if utils::is_type_vec_string(&original_ty) || utils::is_type_option_vec_string(&original_ty)
+        if utils::is_type_vec_string(original_ty) || utils::is_type_option_vec_string(original_ty)
         {
             return quote! {
                 pub fn #name<T: Into<String>>(&mut self, #name: Vec<T>) -> &mut Self {
@@ -167,7 +167,7 @@ pub fn instruction_builder(input: TokenStream) -> TokenStream {
 
         // Custom set method for String or Option<String>
         // These methods can accept Vec<T> where T: Into<String> as argument.
-        if utils::is_type_option_string(&original_ty) || utils::is_type("String", &original_ty) {
+        if utils::is_type_option_string(original_ty) || utils::is_type("String", original_ty) {
             return quote! {
                 pub fn #name<T: Into<String>>(&mut self, #name: T) -> &mut Self {
                     self.#name = Some(#name.into());

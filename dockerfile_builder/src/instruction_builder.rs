@@ -130,11 +130,7 @@ impl FromBuilder {
 
         let tag_or_digest = if let Some(t) = &self.tag {
             Some(format!(":{}", t))
-        } else if let Some(d) = &self.digest {
-            Some(format!("@{}", d))
-        } else {
-            None
-        };
+        } else { self.digest.as_ref().map(|d| format!("@{}", d)) };
 
         Ok(format!(
             "{}{}{}{}",
@@ -145,7 +141,7 @@ impl FromBuilder {
             &self.image,
             tag_or_digest
                 .as_ref()
-                .map(|s| format!("{}", s))
+                .map(|s| s.to_string())
                 .unwrap_or_default(),
             self.name
                 .as_ref()
@@ -243,7 +239,7 @@ pub struct RunBuilder {
 
 impl RunBuilder {
     fn value(&self) -> Result<String, String> {
-        Ok(format!("{}", self.commands.join(" && \\\n")))
+        Ok(self.commands.join(" && \\\n").to_string())
     }
 }
 
@@ -658,7 +654,7 @@ impl CopyBuilder {
             self.link
                 .as_ref()
                 .map(|c| match c {
-                    true => format!("--link "),
+                    true => "--link ".to_string(),
                     false => "".to_string(),
                 })
                 .unwrap_or_default(),
@@ -797,7 +793,7 @@ pub struct VolumeBuilder {
 
 impl VolumeBuilder {
     fn value(&self) -> Result<String, String> {
-        Ok(format!("{}", self.paths.join(" ")))
+        Ok(self.paths.join(" ").to_string())
     }
 }
 
@@ -850,7 +846,7 @@ pub struct WorkdirBuilder {
 
 impl WorkdirBuilder {
     fn value(&self) -> Result<String, String> {
-        Ok(format!("{}", self.path))
+        Ok(self.path.to_string())
     }
 }
 
@@ -929,7 +925,7 @@ pub struct StopsignalBuilder {
 
 impl StopsignalBuilder {
     fn value(&self) -> Result<String, String> {
-        Ok(format!("{}", self.signal))
+        Ok(self.signal.to_string())
     }
 }
 
@@ -974,7 +970,7 @@ impl HealthcheckBuilder {
                 .as_ref()
                 .map(|r| format!("--retries={} ", r))
                 .unwrap_or_default(),
-            self.cmd.to_string(),
+            self.cmd,
         ))
     }
 }

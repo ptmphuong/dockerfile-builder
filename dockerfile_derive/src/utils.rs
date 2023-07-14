@@ -99,7 +99,7 @@ pub(crate) fn get_each_attr(
 
         Ok(each_ident)
     } else {
-        return Err(make_err(struct_ident, EXPECT_EACH_ATTR_TEMPLATE));
+        Err(make_err(struct_ident, EXPECT_EACH_ATTR_TEMPLATE))
     }
 }
 
@@ -147,7 +147,7 @@ pub(crate) fn get_attr(
             value_method,
         })
     } else {
-        return Err(make_err(struct_ident, EXPECT_ATTR_TEMPLATE));
+        Err(make_err(struct_ident, EXPECT_ATTR_TEMPLATE))
     }
 }
 
