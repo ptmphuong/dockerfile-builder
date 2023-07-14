@@ -106,6 +106,16 @@ impl Dockerfile {
         self
     }
 
+    /// Adds `syntax` data to the end of the Dockerfile
+    pub fn syntax<T: Into<String>>(self, syntax: T) -> Self {
+        self.push_any(format!("# syntax={}", syntax.into()))
+    }
+
+    /// Adds `escape` data to the end of the Dockerfile
+    pub fn escape<T: Into<String>>(self, escape: T) -> Self {
+        self.push_any(format!("# escape={}", escape.into()))
+    }
+
     /// Retrieves [`Instruction`] vec from Dockerfile
     ///
     /// [Instruction]: instruction::Instruction
