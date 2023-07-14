@@ -293,13 +293,13 @@ pub fn instruction_builder(input: TokenStream) -> TokenStream {
             #(#builder_set_method)*
             #(#builder_set_each_method)*
 
-            fn check_build(&mut self) -> std::result::Result<#struct_ident, std::boxed::Box<dyn std::error::Error>> {
+            pub fn check_build(&mut self) -> eyre::Result<#struct_ident, String> {
                 Ok(#struct_ident {
                     #(#builder_check_build_field)*
                 })
             }
 
-            pub fn build(&mut self) -> std::result::Result<#instruction_name, std::boxed::Box<dyn std::error::Error>> {
+            pub fn build(&mut self) -> eyre::Result<#instruction_name, String> {
                 let instruction_builder = self.check_build()?;
                 let value = instruction_builder.#value_method()?;
                 Ok(
@@ -309,5 +309,6 @@ pub fn instruction_builder(input: TokenStream) -> TokenStream {
                 )
             }
         }
-    }.into()
+    }
+    .into()
 }

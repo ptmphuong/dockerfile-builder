@@ -77,7 +77,7 @@ pub(crate) const EXPECT_EACH_ATTR_TEMPLATE: &str = r#"Expected
 pub(crate) fn get_each_attr(
     attr: &Vec<syn::Attribute>,
     struct_ident: &syn::Ident,
-) -> Result<syn::Ident, proc_macro2::TokenStream> {
+) -> eyre::Result<syn::Ident, proc_macro2::TokenStream> {
     if attr.len() != 1 {
         return Err(make_err(struct_ident, EXPECT_EACH_ATTR_TEMPLATE));
     }
@@ -106,7 +106,7 @@ pub(crate) fn get_each_attr(
 pub(crate) fn get_attr(
     attr: &Vec<syn::Attribute>,
     struct_ident: &syn::Ident,
-) -> Result<AttrData, proc_macro2::TokenStream> {
+) -> eyre::Result<AttrData, proc_macro2::TokenStream> {
     if attr.is_empty() {
         return Err(make_err(struct_ident, EXPECT_ATTR_TEMPLATE));
     }
@@ -156,7 +156,7 @@ pub(crate) fn verify_attr_ident<T: quote::ToTokens>(
     expected_ident: &str,
     span: T,
     err_msg: &str,
-) -> Result<(), proc_macro2::TokenStream> {
+) -> eyre::Result<(), proc_macro2::TokenStream> {
     match token {
         Some(TokenTree::Ident(ref i)) => {
             if i != expected_ident {
@@ -173,7 +173,7 @@ pub(crate) fn verify_attr_punct<T: quote::ToTokens>(
     expected_punct: char,
     span: T,
     err_msg: &str,
-) -> Result<(), proc_macro2::TokenStream> {
+) -> eyre::Result<(), proc_macro2::TokenStream> {
     match token {
         Some(TokenTree::Punct(ref p)) => {
             if p.as_char() != expected_punct {

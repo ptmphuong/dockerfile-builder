@@ -73,6 +73,7 @@ use crate::instruction::{
     RUN, SHELL, STOPSIGNAL, USER, VOLUME, WORKDIR,
 };
 use dockerfile_derive::InstructionBuilder;
+use eyre::Result;
 
 /// Builder struct for [`FROM`] instruction
 ///
