@@ -32,7 +32,7 @@
 //!
 //! ## Dockerfile Instructions
 //!
-//! [`Instruction`] can be created from String or from [Instruction Builder]. 
+//! [`Instruction`] can be created from String or from [Instruction Builder].
 //! Instruction Builders provide structured and type-safe interfaces to build instructions.
 //!
 //! [Instruction]: instruction::Instruction
@@ -57,14 +57,13 @@
 //!    .push(expose_from_builder);
 //!  
 //!assert_eq!(
-//!    dockerfile.to_string(), 
+//!    dockerfile.to_string(),
 //!    "EXPOSE 80/tcp"
 //!);
 //!
 //! ```
 
-
-use std::fmt::{Display, self};
+use std::fmt::{self, Display};
 
 use instruction::Instruction;
 
@@ -120,21 +119,23 @@ impl Dockerfile {
 
 impl Display for Dockerfile {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let instructions = 
-            self.instructions
-                .iter()
-                .map(|i| i.to_string())
-                .collect::<Vec<String>>();
+        let instructions = self
+            .instructions
+            .iter()
+            .map(|i| i.to_string())
+            .collect::<Vec<String>>();
         write!(f, "{}", instructions.join("\n"))
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use crate::{instruction::{FROM, RUN, EXPOSE}, instruction_builder::ExposeBuilder};
-    use expect_test::expect;
     use super::*;
+    use crate::{
+        instruction::{EXPOSE, FROM, RUN},
+        instruction_builder::ExposeBuilder,
+    };
+    use expect_test::expect;
 
     #[test]
     fn quick_start() {
@@ -165,9 +166,8 @@ mod tests {
             .unwrap();
 
         assert_eq!(expose, expose_from_builder);
-        
-        let dockerfile = Dockerfile::default()
-            .push(expose_from_builder);
+
+        let dockerfile = Dockerfile::default().push(expose_from_builder);
 
         let expected = expect!["EXPOSE 80/tcp"];
         expected.assert_eq(&dockerfile.to_string());
@@ -175,10 +175,7 @@ mod tests {
 
     #[test]
     fn append_instructions() {
-        let comments = vec![
-            "# syntax=docker/dockerfile:1",
-            "# escape=`",
-        ];
+        let comments = vec!["# syntax=docker/dockerfile:1", "# escape=`"];
         let instruction_vec = vec![
             Instruction::FROM(FROM::from("cargo-chef AS chef")),
             Instruction::RUN(RUN::from("cargo run")),
@@ -195,5 +192,4 @@ mod tests {
             RUN cargo run"#]];
         expected.assert_eq(&dockerfile.to_string());
     }
-
 }

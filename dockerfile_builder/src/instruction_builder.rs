@@ -10,7 +10,7 @@
 //!
 //! All build and setter methods for Instruction Builders are automatically generated and follow the same format.
 //!
-//! For example: 
+//! For example:
 //!
 //! `ExposeBuilder` is the builder struct for `Expose`.
 //!
@@ -31,9 +31,9 @@
 //!     .build()
 //!     .unwrap();
 //! ```
-//! 
+//!
 //! Note that:
-//! * The setter method names are identical to the fields names. 
+//! * The setter method names are identical to the fields names.
 //! * For fields with `Option<inner_type>` type: The argument type is the inner_type. It is
 //! optional to set these fields.
 //! * Use `build()` to complete building the instruction. `build()` returns
@@ -42,7 +42,7 @@
 //!
 //! For fields with `Vec<_>` or `Option<Vec<_>>` type, it is possible to set each element of the Vec.
 //!
-//! For example: 
+//! For example:
 //!
 //! `RunBuilder` is the builder struct for `Run`.
 //!
@@ -62,24 +62,26 @@
 //!     .unwrap();
 //! assert_eq!(
 //!     run.to_string(),
-//!     r#"RUN source $HOME/.bashrc && \ 
+//!     r#"RUN source $HOME/.bashrc && \
 //!echo $HOME"#,
 //! );
 //! ```
-//! 
+//!
 
-use crate::instruction::{FROM, RUN, CMD, ENV, EXPOSE, LABEL, ADD, COPY, ENTRYPOINT, 
-    VOLUME, USER, WORKDIR, ARG, ONBUILD, STOPSIGNAL, HEALTHCHECK, SHELL, Instruction};
+use crate::instruction::{
+    Instruction, ADD, ARG, CMD, COPY, ENTRYPOINT, ENV, EXPOSE, FROM, HEALTHCHECK, LABEL, ONBUILD,
+    RUN, SHELL, STOPSIGNAL, USER, VOLUME, WORKDIR,
+};
 use dockerfile_derive::InstructionBuilder;
 
 /// Builder struct for [`FROM`] instruction
 ///
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#from):
 /// * `FROM [--platform=<platform>] <image> [AS <name>]`
-/// or 
+/// or
 /// * `FROM [--platform=<platform>] <image>[:<tag>] [AS <name>]`
-/// or 
+/// or
 /// * `FROM [--platform=<platform>] <image>[@<digest>] [AS <name>]`
 ///
 /// Example:
@@ -106,13 +108,15 @@ use dockerfile_derive::InstructionBuilder;
 /// [FROM]: dockerfile_builder::instruction::FROM
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = FROM, 
+    instruction_name = FROM,
     value_method = value,
 )]
 pub struct FromBuilder {
     pub image: String,
     pub name: Option<String>,
+
     pub tag: Option<String>,
+
     pub digest: Option<String>,
     pub platform: Option<String>,
 }
@@ -131,18 +135,24 @@ impl FromBuilder {
             None
         };
 
-        Ok(
-        format!(
-            "{}{}{}{}", 
-            self.platform.as_ref().map(|s| format!("--platform={} ", s)).unwrap_or_default(),
+        Ok(format!(
+            "{}{}{}{}",
+            self.platform
+                .as_ref()
+                .map(|s| format!("--platform={} ", s))
+                .unwrap_or_default(),
             &self.image,
-            tag_or_digest.as_ref().map(|s| format!("{}", s)).unwrap_or_default(),
-            self.name.as_ref().map(|s| format!(" AS {}", s)).unwrap_or_default(),
-        )
-        )
+            tag_or_digest
+                .as_ref()
+                .map(|s| format!("{}", s))
+                .unwrap_or_default(),
+            self.name
+                .as_ref()
+                .map(|s| format!(" AS {}", s))
+                .unwrap_or_default(),
+        ))
     }
 }
-
 
 /// Builder struct for [`ENV`] instruction
 ///
@@ -164,7 +174,7 @@ impl FromBuilder {
 /// [ENV]: dockerfile_builder::instruction::ENV
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = ENV, 
+    instruction_name = ENV,
     value_method = value,
 )]
 pub struct EnvBuilder {
@@ -179,16 +189,16 @@ impl EnvBuilder {
 }
 
 /// Builder struct for [`RUN`] instruction (shell form)
-/// 
+///
 /// `RunBuilder` constructs the shell form for [`RUN`] by default.
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#run):
 /// * `RUN command`
 ///
 /// Example:
 /// ```
 /// # use dockerfile_builder::instruction_builder::RunBuilder;
-/// // build RUN with a single command 
+/// // build RUN with a single command
 /// let run = RunBuilder::builder()
 ///     .command("source $HOME/.bashrc")
 ///     .build().unwrap();
@@ -201,7 +211,7 @@ impl EnvBuilder {
 ///     .build().unwrap();
 /// assert_eq!(
 ///     run.to_string(),
-///     r#"RUN source $HOME/.bashrc && \ 
+///     r#"RUN source $HOME/.bashrc && \
 ///echo $HOME"#,
 /// );
 ///
@@ -211,7 +221,7 @@ impl EnvBuilder {
 ///     .build().unwrap();
 /// assert_eq!(
 ///     run.to_string(),
-///     r#"RUN source $HOME/.bashrc && \ 
+///     r#"RUN source $HOME/.bashrc && \
 ///echo $HOME"#,
 /// );
 /// ```
@@ -222,7 +232,7 @@ impl EnvBuilder {
 // TODO: Flag options for RUN
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = RUN, 
+    instruction_name = RUN,
     value_method = value,
 )]
 pub struct RunBuilder {
@@ -232,15 +242,14 @@ pub struct RunBuilder {
 
 impl RunBuilder {
     fn value(&self) -> Result<String, String> {
-        Ok(format!("{}", self.commands.join(" && \\ \n")))
+        Ok(format!("{}", self.commands.join(" && \\\n")))
     }
 }
 
-
 /// Builder struct for [`RUN`] instruction (exec form)
-/// 
+///
 /// RunBuilder constructs the exec form for [`RUN`].
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#run):
 /// * `RUN ["executable", "param1", "param2"]`
 ///
@@ -268,7 +277,7 @@ impl RunBuilder {
 /// [RUN]: dockerfile_builder::instruction::RUN
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = RUN, 
+    instruction_name = RUN,
     value_method = value,
 )]
 pub struct RunExecBuilder {
@@ -280,18 +289,17 @@ pub struct RunExecBuilder {
 impl RunExecBuilder {
     fn value(&self) -> Result<String, String> {
         Ok(format!(
-            r#"["{}", "{}"]"#, 
+            r#"["{}", "{}"]"#,
             self.executable,
             self.params.clone().unwrap_or_default().join(r#"", ""#)
         ))
     }
 }
 
-
 /// Builder struct for [`CMD`] instruction (shell form)
-/// 
+///
 /// CmdBuilder constructs the shell form for [`CMD`] by default.
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#cmd):
 /// * `CMD command param1 param2`
 ///
@@ -306,7 +314,7 @@ impl RunExecBuilder {
 ///     .build().unwrap();
 /// assert_eq!(cmd.to_string(), r#"CMD echo "this is a test" | wc -l"#);
 ///
-/// // build CMD with multiple params using a vec
+/// // build CMD with multiple params using a vec    
 /// let cmd = CmdBuilder::builder()
 ///     .command(r#"echo "this is a test""#)
 ///     .params(vec!["| wc", "-l"])
@@ -319,7 +327,7 @@ impl RunExecBuilder {
 /// [CMD]: dockerfile_builder::instruction::CMD
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = CMD, 
+    instruction_name = CMD,
     value_method = value,
 )]
 pub struct CmdBuilder {
@@ -338,11 +346,10 @@ impl CmdBuilder {
     }
 }
 
-
 /// Builder struct for [`CMD`] instruction (exec form)
-/// 
+///
 /// CmdBuilder constructs the exec form for [`CMD`].
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#cmd):
 /// * `CMD ["executable", "param1", "param2"]`
 /// OR
@@ -351,7 +358,7 @@ impl CmdBuilder {
 /// Example:
 /// ```
 /// # use dockerfile_builder::instruction_builder::CmdExecBuilder;
-/// // build CMD with a single param 
+/// // build CMD with a single param
 /// let cmd = CmdExecBuilder::builder()
 ///     .executable("/usr/bin/wc")
 ///     .param("--help")
@@ -371,7 +378,7 @@ impl CmdBuilder {
 /// [CMD]: dockerfile_builder::instruction::CMD
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = CMD, 
+    instruction_name = CMD,
     value_method = value,
 )]
 pub struct CmdExecBuilder {
@@ -386,17 +393,19 @@ impl CmdExecBuilder {
             return Err("CMD cannot be empty".to_string());
         }
         Ok(format!(
-            r#"[{}"{}"]"#, 
-            self.executable.as_ref().map(|e| format!(r#""{}", "#, e)).unwrap_or_default(),
+            r#"[{}"{}"]"#,
+            self.executable
+                .as_ref()
+                .map(|e| format!(r#""{}", "#, e))
+                .unwrap_or_default(),
             self.params.clone().unwrap_or_default().join(r#"", ""#),
         ))
     }
 }
 
-
 /// Builder struct for [`LABEL`] instruction
 ///
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#label):
 /// * `LABEL <key>=<value>`
 ///
@@ -413,12 +422,12 @@ impl CmdExecBuilder {
 ///
 /// [LABEL]: dockerfile_builder::instruction::LABEL
 ///
-// TODO: The official format is 
+// TODO: The official format is
 // * `LABEL <key>=<value> <key>=<value> <key>=<value> ...`
 // Use `each` to support the multiple format.
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = LABEL, 
+    instruction_name = LABEL,
     value_method = value,
 )]
 pub struct LabelBuilder {
@@ -428,17 +437,13 @@ pub struct LabelBuilder {
 
 impl LabelBuilder {
     fn value(&self) -> Result<String, String> {
-        Ok(format!(
-            "{}={}",
-            self.key, self.value
-        ))
+        Ok(format!("{}={}", self.key, self.value))
     }
 }
 
-
 /// Builder struct for [`EXPOSE`] instruction
 ///
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#expose):
 /// * `EXPOSE <port>`
 /// or
@@ -469,17 +474,19 @@ pub struct ExposeBuilder {
 impl ExposeBuilder {
     fn value(&self) -> Result<String, String> {
         Ok(format!(
-            "{}{}", 
-            self.port, 
-            self.protocol.as_ref().map(|p| format!("/{}", p)).unwrap_or_default()
+            "{}{}",
+            self.port,
+            self.protocol
+                .as_ref()
+                .map(|p| format!("/{}", p))
+                .unwrap_or_default()
         ))
     }
 }
 
-
 /// Builder struct for [`ADD`] instruction
 ///
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#add):
 /// * `ADD [--chown=<chown>] [--chmod=<chmod>] <src>... <dest>`
 ///
@@ -498,7 +505,7 @@ impl ExposeBuilder {
 /// [ADD]: dockerfile_builder::instruction::ADD
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = ADD, 
+    instruction_name = ADD,
     value_method = value,
 )]
 pub struct AddBuilder {
@@ -512,18 +519,23 @@ impl AddBuilder {
     fn value(&self) -> Result<String, String> {
         Ok(format!(
             "{}{}{} {}",
-            self.chown.as_ref().map(|c| format!("--chown={} ", c)).unwrap_or_default(),
-            self.chmod.as_ref().map(|c| format!("--chmod={} ", c)).unwrap_or_default(),
-            self.src, 
+            self.chown
+                .as_ref()
+                .map(|c| format!("--chown={} ", c))
+                .unwrap_or_default(),
+            self.chmod
+                .as_ref()
+                .map(|c| format!("--chmod={} ", c))
+                .unwrap_or_default(),
+            self.src,
             self.dest,
         ))
     }
 }
 
-
 /// Builder struct for [`ADD`] instruction (http src)
 ///
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#add):
 /// * `ADD --checksum=<checksum> <src> <dest>`
 ///
@@ -541,7 +553,7 @@ impl AddBuilder {
 /// [ADD]: dockerfile_builder::instruction::ADD
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = ADD, 
+    instruction_name = ADD,
     value_method = value,
 )]
 pub struct AddHttpBuilder {
@@ -554,24 +566,26 @@ impl AddHttpBuilder {
     fn value(&self) -> Result<String, String> {
         Ok(format!(
             "{}{} {}",
-            self.checksum.as_ref().map(|c| format!("--checksum={} ", c)).unwrap_or_default(),
-            self.src, 
+            self.checksum
+                .as_ref()
+                .map(|c| format!("--checksum={} ", c))
+                .unwrap_or_default(),
+            self.src,
             self.dest,
         ))
     }
 }
 
-
 /// Builder struct for [`ADD`] instruction (git repository)
 ///
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#add):
 /// * `ADD [--keep-git-dir=<boolean>] <git ref> <dir>`
 ///
 /// [ADD]: dockerfile_builder::instruction::ADD
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = ADD, 
+    instruction_name = ADD,
     value_method = value,
 )]
 pub struct AddGitBuilder {
@@ -584,17 +598,19 @@ impl AddGitBuilder {
     fn value(&self) -> Result<String, String> {
         Ok(format!(
             "{}{} {}",
-            self.keep_git_dir.as_ref().map(|c| format!("--keep-git-dir={} ", c)).unwrap_or_default(),
-            self.git_ref, 
+            self.keep_git_dir
+                .as_ref()
+                .map(|c| format!("--keep-git-dir={} ", c))
+                .unwrap_or_default(),
+            self.git_ref,
             self.dir,
         ))
     }
 }
 
-
 /// Builder struct for [`COPY`] instruction
 ///
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#copy):
 /// * `COPY [--chown=<chown>] [--chmod=<chmod>] [--from=<from>] [--link] <src>... <dest>`
 ///
@@ -602,7 +618,7 @@ impl AddGitBuilder {
 // TODO: Add flag [--from=]
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = COPY, 
+    instruction_name = COPY,
     value_method = value,
 )]
 pub struct CopyBuilder {
@@ -618,31 +634,42 @@ impl CopyBuilder {
     fn value(&self) -> Result<String, String> {
         Ok(format!(
             "{}{}{}{}{} {}",
-            self.chown.as_ref().map(|c| format!("--chown={} ", c)).unwrap_or_default(),
-            self.chmod.as_ref().map(|c| format!("--chmod={} ", c)).unwrap_or_default(),
-            self.link.as_ref().map(|c| match c {
+            self.chown
+                .as_ref()
+                .map(|c| format!("--chown={} ", c))
+                .unwrap_or_default(),
+            self.chmod
+                .as_ref()
+                .map(|c| format!("--chmod={} ", c))
+                .unwrap_or_default(),
+            self.link
+                .as_ref()
+                .map(|c| match c {
                     true => format!("--link "),
                     false => "".to_string(),
-                }).unwrap_or_default(),
-            self.from.as_ref().map(|c| format!("--chmod={} ", c)).unwrap_or_default(),
-            self.src, 
+                })
+                .unwrap_or_default(),
+            self.from
+                .as_ref()
+                .map(|c| format!("--chmod={} ", c))
+                .unwrap_or_default(),
+            self.src,
             self.dest,
         ))
     }
 }
 
-
 /// Builder struct for [`ENTRYPOINT`] instruction (shell form)
-/// 
+///
 /// EntrypointBuilder constructs the shell form for [`ENTRYPOINT`] by default.
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#entrypoint):
 /// * `ENTRYPOINT command param1 param2`
 ///
 /// Example:
 /// ```
 /// # use dockerfile_builder::instruction_builder::EntrypointBuilder;
-/// // build ENTRYPOINT with params 
+/// // build ENTRYPOINT with params
 /// let entrypoint = EntrypointBuilder::builder()
 ///     .command("some command")
 ///     .param("-f")
@@ -663,7 +690,7 @@ impl CopyBuilder {
 /// [ENTRYPOINT]: dockerfile_builder::instruction::ENTRYPOINT
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = ENTRYPOINT, 
+    instruction_name = ENTRYPOINT,
     value_method = value,
 )]
 pub struct EntrypointBuilder {
@@ -677,23 +704,28 @@ impl EntrypointBuilder {
         Ok(format!(
             "{}{}",
             self.command,
-            self.params.clone().unwrap_or_default().join(" "),
+            self.params
+                .clone()
+                .unwrap_or_default()
+                .iter()
+                .map(|p| format!(" {}", p))
+                .collect::<Vec<String>>()
+                .join(""),
         ))
     }
 }
 
-
 /// Builder struct for [`ENTRYPOINT`] instruction (exec form)
-/// 
+///
 /// EntrypointExecBuilder constructs the exec form for [`ENTRYPOINT`].
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#entrypoint):
 /// * `ENTRYPOINT ["executable", "param1", "param2"]`
 ///
 /// Example:
 /// ```
 /// # use dockerfile_builder::instruction_builder::EntrypointExecBuilder;
-/// // build ENTRYPOINT with params 
+/// // build ENTRYPOINT with params
 /// let entrypoint = EntrypointExecBuilder::builder()
 ///     .executable("/usr/sbin/apache2ctl")
 ///     .param("-D")
@@ -715,7 +747,7 @@ impl EntrypointBuilder {
 // TODO: Fix according to format
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = ENTRYPOINT, 
+    instruction_name = ENTRYPOINT,
     value_method = value,
 )]
 pub struct EntrypointExecBuilder {
@@ -727,24 +759,23 @@ pub struct EntrypointExecBuilder {
 impl EntrypointExecBuilder {
     fn value(&self) -> Result<String, String> {
         Ok(format!(
-            r#"["{}", "{}"]"#, 
+            r#"["{}", "{}"]"#,
             self.executable,
             self.params.join(r#"", ""#),
         ))
     }
 }
 
-
 /// Builder struct for [`VOLUME`] instruction
 ///
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#volume):
 /// * `VOLUME <path>...`
-/// 
+///
 /// [VOLUME]: dockerfile_builder::instruction::VOLUME
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = VOLUME, 
+    instruction_name = VOLUME,
     value_method = value,
 )]
 pub struct VolumeBuilder {
@@ -758,10 +789,9 @@ impl VolumeBuilder {
     }
 }
 
-
 /// Builder struct for [`USER`] instruction
 ///
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#user):
 /// * `USER <user>`
 /// or
@@ -780,17 +810,19 @@ pub struct UserBuilder {
 impl UserBuilder {
     fn value(&self) -> Result<String, String> {
         Ok(format!(
-            "{}{}", 
-            self.user, 
-            self.group.as_ref().map(|g| format!(":{}", g)).unwrap_or_default()
+            "{}{}",
+            self.user,
+            self.group
+                .as_ref()
+                .map(|g| format!(":{}", g))
+                .unwrap_or_default()
         ))
     }
 }
 
-
 /// Builder struct for [`WORKDIR`] instruction
 ///
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#workdir):
 /// * `WORKDIR <path>`
 ///
@@ -810,10 +842,9 @@ impl WorkdirBuilder {
     }
 }
 
-
 /// Builder struct for [`ARG`] instruction
 ///
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#arg):
 /// * `ARG <name>[=<value>]`
 ///
@@ -838,10 +869,9 @@ impl ArgBuilder {
     }
 }
 
-
 /// Builder struct for [`ONBUILD`] instruction
 ///
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#onbuild):
 /// * `ONBUILD <INSTRUCTION>`
 ///
@@ -858,17 +888,20 @@ pub struct OnbuildBuilder {
 impl OnbuildBuilder {
     fn value(&self) -> Result<String, String> {
         match &self.instruction {
-            Instruction::ONBUILD(_) => Err("Chaining ONBUILD instructions using ONBUILD ONBUILD isn’t allowed".to_string()),
-            Instruction::FROM(_) => Err("ONBUILD instruction may not trigger FROM instruction".to_string()),
+            Instruction::ONBUILD(_) => {
+                Err("Chaining ONBUILD instructions using ONBUILD ONBUILD isn’t allowed".to_string())
+            }
+            Instruction::FROM(_) => {
+                Err("ONBUILD instruction may not trigger FROM instruction".to_string())
+            }
             ins => Ok(ins.to_string()),
         }
     }
 }
 
-
 /// Builder struct for [`STOPSIGNAL`] instruction
 ///
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#stopsignal):
 /// * `STOPSIGNAL <signal>`
 ///
@@ -888,12 +921,11 @@ impl StopsignalBuilder {
     }
 }
 
-
 /// Builder struct for [`HEALTHCHECK`] instruction
 ///
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#healthcheck):
-/// * `HEALTHCHECK [--interval=DURATION] [--timeout=DURATION] 
+/// * `HEALTHCHECK [--interval=DURATION] [--timeout=DURATION]
 ///                [--start-period=DURATION] [--retries=N] CMD <command>`
 ///
 /// [HEALTHCHECK]: dockerfile_builder::instruction::HEALTHCHECK
@@ -913,19 +945,31 @@ pub struct HealthcheckBuilder {
 impl HealthcheckBuilder {
     fn value(&self) -> Result<String, String> {
         Ok(format!(
-            "{}{}{}{}{}", 
-            self.interval.as_ref().map(|i| format!("--interal={} ", i)).unwrap_or_default(),
-            self.timeout.as_ref().map(|t| format!("--timeout={} ", t)).unwrap_or_default(),
-            self.start_period.as_ref().map(|s| format!("--start-period={} ", s)).unwrap_or_default(),
-            self.retries.as_ref().map(|r| format!("--retries={} ", r)).unwrap_or_default(),
-            self.cmd.to_string(), 
+            "{}{}{}{}{}",
+            self.interval
+                .as_ref()
+                .map(|i| format!("--interal={} ", i))
+                .unwrap_or_default(),
+            self.timeout
+                .as_ref()
+                .map(|t| format!("--timeout={} ", t))
+                .unwrap_or_default(),
+            self.start_period
+                .as_ref()
+                .map(|s| format!("--start-period={} ", s))
+                .unwrap_or_default(),
+            self.retries
+                .as_ref()
+                .map(|r| format!("--retries={} ", r))
+                .unwrap_or_default(),
+            self.cmd.to_string(),
         ))
     }
 }
 
 /// Builder struct for [`SHELL`] instruction
 ///
-/// Format according to [Dockerfile 
+/// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#shell):
 /// * `SHELL ["executable", "parameters"]`
 ///
@@ -934,7 +978,7 @@ impl HealthcheckBuilder {
 // TODO: Fix according to format
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
-    instruction_name = SHELL, 
+    instruction_name = SHELL,
     value_method = value,
 )]
 pub struct ShellBuilder {
@@ -948,7 +992,6 @@ impl ShellBuilder {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -956,10 +999,7 @@ mod tests {
 
     #[test]
     fn from() {
-        let from = FromBuilder::builder()
-            .image("cargo-chef")
-            .build()
-            .unwrap();
+        let from = FromBuilder::builder().image("cargo-chef").build().unwrap();
         let expected = expect!["FROM cargo-chef"];
         expected.assert_eq(&from.to_string());
 
@@ -992,8 +1032,7 @@ mod tests {
 
     #[test]
     fn from_err() {
-        let from = FromBuilder::builder()
-            .build();
+        let from = FromBuilder::builder().build();
         match from {
             Ok(_) => panic!("Required field is not set. Expect test to fail"),
             Err(e) => assert_eq!(
@@ -1018,9 +1057,7 @@ mod tests {
 
     #[test]
     fn expose() {
-        let expose = ExposeBuilder::builder()
-            .port(80)
-            .build().unwrap();
+        let expose = ExposeBuilder::builder().port(80).build().unwrap();
         let expected = expect!["EXPOSE 80"];
         expected.assert_eq(&expose.to_string());
     }
@@ -1030,7 +1067,8 @@ mod tests {
         let add = AddBuilder::builder()
             .src("hom*")
             .dest("/mydir/")
-            .build().unwrap();
+            .build()
+            .unwrap();
         let expected = expect!["ADD hom* /mydir/"];
         expected.assert_eq(&add.to_string());
     }
@@ -1041,7 +1079,8 @@ mod tests {
             .checksum("sha256::123")
             .src("http://example.com/foobar")
             .dest("/")
-            .build().unwrap();
+            .build()
+            .unwrap();
         let expected = expect!["ADD --checksum=sha256::123 http://example.com/foobar /"];
         expected.assert_eq(&add.to_string());
     }
@@ -1052,8 +1091,11 @@ mod tests {
             .keep_git_dir(true)
             .git_ref("https://github.com/moby/buildkit.git#v0.10.1")
             .dir("/buildkit")
-            .build().unwrap();
-        let expected = expect!["ADD --keep-git-dir=true https://github.com/moby/buildkit.git#v0.10.1 /buildkit"];
+            .build()
+            .unwrap();
+        let expected = expect![
+            "ADD --keep-git-dir=true https://github.com/moby/buildkit.git#v0.10.1 /buildkit"
+        ];
         expected.assert_eq(&add.to_string());
     }
 
@@ -1064,7 +1106,8 @@ mod tests {
             .chmod(655)
             .src("files*")
             .dest("/somedir/")
-            .build().unwrap();
+            .build()
+            .unwrap();
         let expected = expect!["COPY --chown=bin --chmod=655 files* /somedir/"];
         expected.assert_eq(&copy.to_string());
 
@@ -1072,7 +1115,8 @@ mod tests {
             .link(true)
             .src("foo/")
             .dest("bar/")
-            .build().unwrap();
+            .build()
+            .unwrap();
         let expected = expect!["COPY --link foo/ bar/"];
         expected.assert_eq(&copy.to_string());
     }
@@ -1082,22 +1126,23 @@ mod tests {
         let volume = VolumeBuilder::builder()
             .path("/myvol1")
             .path("/myvol2")
-            .build().unwrap();
+            .build()
+            .unwrap();
         let expected = expect!["VOLUME /myvol1 /myvol2"];
         expected.assert_eq(&volume.to_string());
     }
 
     #[test]
     fn user() {
-        let user = UserBuilder::builder()
-            .user("myuser")
-            .build().unwrap();
+        let user = UserBuilder::builder().user("myuser").build().unwrap();
         let expected = expect!["USER myuser"];
         expected.assert_eq(&user.to_string());
 
         let user = UserBuilder::builder()
-            .user("myuser").group("mygroup")
-            .build().unwrap();
+            .user("myuser")
+            .group("mygroup")
+            .build()
+            .unwrap();
         let expected = expect!["USER myuser:mygroup"];
         expected.assert_eq(&user.to_string());
     }
@@ -1106,23 +1151,23 @@ mod tests {
     fn workdir() {
         let workdir = WorkdirBuilder::builder()
             .path("/path/to/workdir")
-            .build().unwrap();
+            .build()
+            .unwrap();
         let expected = expect!["WORKDIR /path/to/workdir"];
         expected.assert_eq(&workdir.to_string());
     }
 
     #[test]
     fn arg() {
-        let arg = ArgBuilder::builder()
-            .name("user1")
-            .build().unwrap();
+        let arg = ArgBuilder::builder().name("user1").build().unwrap();
         let expected = expect!["ARG user1"];
         expected.assert_eq(&arg.to_string());
 
         let arg = ArgBuilder::builder()
             .name("user1")
             .value("someuser")
-            .build().unwrap();
+            .build()
+            .unwrap();
         let expected = expect!["ARG user1=someuser"];
         expected.assert_eq(&arg.to_string());
     }
@@ -1131,7 +1176,8 @@ mod tests {
     fn onbuild() {
         let onbuild = OnbuildBuilder::builder()
             .instruction(Instruction::ADD(ADD::from(". /app/src")))
-            .build().unwrap();
+            .build()
+            .unwrap();
         let expected = expect!["ONBUILD ADD . /app/src"];
         expected.assert_eq(&onbuild.to_string());
     }
@@ -1153,7 +1199,9 @@ mod tests {
             .instruction(Instruction::FROM(FROM::from("someimage")))
             .build();
         match onbuild {
-            Ok(_) => panic!("ONBUILD instruction may not trigger FROM instruction. Expect test to fail"),
+            Ok(_) => {
+                panic!("ONBUILD instruction may not trigger FROM instruction. Expect test to fail")
+            }
             Err(e) => assert_eq!(
                 e.to_string(),
                 "ONBUILD instruction may not trigger FROM instruction".to_string(),
@@ -1164,7 +1212,9 @@ mod tests {
     #[test]
     fn stopsignal() {
         let stopsignal = StopsignalBuilder::builder()
-            .signal("SIGKILL").build().unwrap();
+            .signal("SIGKILL")
+            .build()
+            .unwrap();
         let expected = expect!["STOPSIGNAL SIGKILL"];
         expected.assert_eq(&stopsignal.to_string());
     }
@@ -1173,7 +1223,8 @@ mod tests {
     fn healthcheck() {
         let healthcheck = HealthcheckBuilder::builder()
             .cmd(CMD::from("curl -f http://localhost/"))
-            .build().unwrap();
+            .build()
+            .unwrap();
         let expected = expect!["HEALTHCHECK CMD curl -f http://localhost/"];
         expected.assert_eq(&healthcheck.to_string());
 
@@ -1183,7 +1234,8 @@ mod tests {
             .timeout(200)
             .start_period(5)
             .retries(5)
-            .build().unwrap();
+            .build()
+            .unwrap();
         let expected = expect!["HEALTHCHECK --interal=15 --timeout=200 --start-period=5 --retries=5 CMD curl -f http://localhost/"];
         expected.assert_eq(&healthcheck.to_string());
     }
@@ -1193,17 +1245,9 @@ mod tests {
         let shell = ShellBuilder::builder()
             .param("powershell")
             .param("-command")
-            .build().unwrap();
+            .build()
+            .unwrap();
         let expected = expect![[r#"SHELL ["powershell", "-command"]"#]];
         expected.assert_eq(&shell.to_string());
-    }
-
-    #[test]
-    fn vec_string() {
-        let myvec = vec!["a", "b"];
-        let shell = ShellBuilder::builder()
-            .params(myvec)
-            .build().unwrap();
-        println!("shell: {:?}", shell);
     }
 }
