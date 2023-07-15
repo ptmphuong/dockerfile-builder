@@ -2,18 +2,14 @@ This library provides a convenient way to programmatically generate Dockerfiles 
 
 Dockerfiles instructions can be generated using structured and type-safe interfaces, or they can be added flexibly in raw form.
 
-This library is actively developed and will be published to crates.io once features are complete.
-
 # Quickstart
 
 ```toml
-# Cargo.toml
 [dependencies]
 dockerfile_builder = "0.1.0"
 ```
 
 ```rust
-// src/main.rs 
 use dockerfile_builder::Dockerfile;
 use dockerfile_builder::instruction::{RUN, EXPOSE};
 
@@ -40,19 +36,17 @@ Dockerfile instructions can be created from a string or with instruction builder
 Instruction builders provide structured and type-safe interfaces to build instructions.
 
 ```rust
-// src/main.rs 
 use dockerfile_builder::Dockerfile;
 use dockerfile_builder::instruction::EXPOSE;
 use dockerfile_builder::instruction_builder::ExposeBuilder;
 
-fn main() {
+fn main() -> eyre::Result<()) {
     let expose = EXPOSE::from("80/tcp");
     
     let expose_from_builder = ExposeBuilder::builder()
         .port(80)
         .protocol("tcp")
-        .build()
-        .unwrap();
+        .build()?;
     
     assert_eq!(expose, expose_from_builder);
     
@@ -63,6 +57,8 @@ fn main() {
         dockerfile.to_string(), 
         "EXPOSE 80/tcp"
     );
+
+    Ok(())
 }
 ```
 
