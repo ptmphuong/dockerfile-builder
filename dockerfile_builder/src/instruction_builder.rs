@@ -115,9 +115,7 @@ use eyre::{eyre, Result};
 pub struct FromBuilder {
     pub image: String,
     pub name: Option<String>,
-
     pub tag: Option<String>,
-
     pub digest: Option<String>,
     pub platform: Option<String>,
 }
@@ -637,8 +635,8 @@ pub struct CopyBuilder {
     pub dest: String,
     pub chown: Option<String>,
     pub chmod: Option<u16>,
-    pub link: Option<bool>,
     pub from: Option<String>,
+    pub link: Option<bool>,
 }
 
 impl CopyBuilder {
