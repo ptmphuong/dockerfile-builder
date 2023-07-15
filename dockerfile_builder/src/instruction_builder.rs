@@ -72,7 +72,7 @@ use crate::instruction::{
     Instruction, ADD, ARG, CMD, COPY, ENTRYPOINT, ENV, EXPOSE, FROM, HEALTHCHECK, LABEL, ONBUILD,
     RUN, SHELL, STOPSIGNAL, USER, VOLUME, WORKDIR,
 };
-use dockerfile_derive::InstructionBuilder;
+use dockerfile_builder_macros::InstructionBuilder;
 use eyre::{eyre, Result};
 
 /// Builder struct for [`FROM`] instruction

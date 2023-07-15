@@ -271,11 +271,15 @@ pub fn instruction_builder(input: TokenStream) -> TokenStream {
         }
     });
 
+    let link_to_builder = format!(
+        "Builder implementation - All set methods can be found in [`{}`]",
+        builder_ident
+    );
     let builder_impl_note = format!("Builder implementation for [`{}`]", struct_ident);
 
     quote! {
         impl #struct_ident {
-            /// Builder implementation
+            #[doc = #link_to_builder]
             pub fn builder() -> #builder_ident {
                 #builder_ident {
                     #(#builder_empty)*

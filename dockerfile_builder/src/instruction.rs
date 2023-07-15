@@ -2,7 +2,7 @@
 //!
 //! See [`Instruction`]
 
-use dockerfile_derive::InstructionInit;
+use dockerfile_builder_macros::InstructionInit;
 
 /// Dockerfile Instructions
 ///

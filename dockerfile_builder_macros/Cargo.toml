@@ -1,0 +1,17 @@
+[package]
+name = "dockerfile_builder_macros"
+version = "0.1.0"
+edition = "2021"
+authors = ["Phuong Pham <ptmphuong9@gmail.com>"]
+description = "Private macro implemenation for dockerfile_builder"
+repository = "https://github.com/ptmphuong/dockerfile-builder/"
+license = "MIT OR Apache-2.0"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+eyre = "0.6.8"
+proc-macro2 = "1.0.63"
+quote = "1.0.28"
+syn = { version = "2.0.18", features = ["extra-traits", "printing"] }

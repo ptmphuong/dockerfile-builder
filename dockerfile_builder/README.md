@@ -9,7 +9,7 @@ This library is actively developed and will be published to crates.io once featu
 ```toml
 # Cargo.toml
 [dependencies]
-dockerfile_builder = { git = "https://github.com/ptmphuong/dockerfile-builder" }
+dockerfile_builder = "0.1.0"
 ```
 
 ```rust

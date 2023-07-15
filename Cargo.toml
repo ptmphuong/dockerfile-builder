@@ -1,6 +1,5 @@
 [workspace]
-
 members = [
 	"dockerfile_builder",
-	"dockerfile_derive",
+	"dockerfile_builder_macros",
 ]
