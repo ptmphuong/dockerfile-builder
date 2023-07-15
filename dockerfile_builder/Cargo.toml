@@ -1,6 +1,6 @@
 [package]
 name = "dockerfile_builder"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Flexible Dockerfile builder with type-safe features"
 keywords = ["docker", "dockerfile", "dockerfile-builder", "dockerfile-generator"]
