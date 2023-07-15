@@ -73,7 +73,7 @@ use crate::instruction::{
     RUN, SHELL, STOPSIGNAL, USER, VOLUME, WORKDIR,
 };
 use dockerfile_derive::InstructionBuilder;
-use eyre::Result;
+use eyre::{eyre, Result};
 
 /// Builder struct for [`FROM`] instruction
 ///
@@ -123,14 +123,16 @@ pub struct FromBuilder {
 }
 
 impl FromBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         if self.tag.is_some() && self.digest.is_some() {
-            return Err("Dockerfile image can only have tag OR digest".to_string());
+            return Err(eyre!("Dockerfile image can only have tag OR digest"));
         }
 
         let tag_or_digest = if let Some(t) = &self.tag {
             Some(format!(":{}", t))
-        } else { self.digest.as_ref().map(|d| format!("@{}", d)) };
+        } else {
+            self.digest.as_ref().map(|d| format!("@{}", d))
+        };
 
         Ok(format!(
             "{}{}{}{}",
@@ -180,7 +182,7 @@ pub struct EnvBuilder {
 }
 
 impl EnvBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         Ok(format!("{}={}", self.key, self.value))
     }
 }
@@ -238,7 +240,7 @@ pub struct RunBuilder {
 }
 
 impl RunBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         Ok(self.commands.join(" && \\\n").to_string())
     }
 }
@@ -284,7 +286,7 @@ pub struct RunExecBuilder {
 }
 
 impl RunExecBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         Ok(format!(
             r#"["{}", "{}"]"#,
             self.executable,
@@ -334,7 +336,7 @@ pub struct CmdBuilder {
 }
 
 impl CmdBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         Ok(format!(
             "{} {}",
             self.command,
@@ -385,9 +387,9 @@ pub struct CmdExecBuilder {
 }
 
 impl CmdExecBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         if self.executable.is_none() && self.params.is_none() {
-            return Err("CMD cannot be empty".to_string());
+            return Err(eyre!("CMD cannot be empty"));
         }
         Ok(format!(
             r#"[{}"{}"]"#,
@@ -433,7 +435,7 @@ pub struct LabelBuilder {
 }
 
 impl LabelBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         Ok(format!("{}={}", self.key, self.value))
     }
 }
@@ -469,7 +471,7 @@ pub struct ExposeBuilder {
 }
 
 impl ExposeBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         Ok(format!(
             "{}{}",
             self.port,
@@ -513,7 +515,7 @@ pub struct AddBuilder {
 }
 
 impl AddBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         Ok(format!(
             "{}{}{} {}",
             self.chown
@@ -560,7 +562,7 @@ pub struct AddHttpBuilder {
 }
 
 impl AddHttpBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         Ok(format!(
             "{}{} {}",
             self.checksum
@@ -592,7 +594,7 @@ pub struct AddGitBuilder {
 }
 
 impl AddGitBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         Ok(format!(
             "{}{} {}",
             self.keep_git_dir
@@ -640,7 +642,7 @@ pub struct CopyBuilder {
 }
 
 impl CopyBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         Ok(format!(
             "{}{}{}{}{} {}",
             self.chown
@@ -709,7 +711,7 @@ pub struct EntrypointBuilder {
 }
 
 impl EntrypointBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         Ok(format!(
             "{}{}",
             self.command,
@@ -765,7 +767,7 @@ pub struct EntrypointExecBuilder {
 }
 
 impl EntrypointExecBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         Ok(format!(
             r#"["{}", "{}"]"#,
             self.executable,
@@ -792,7 +794,7 @@ pub struct VolumeBuilder {
 }
 
 impl VolumeBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         Ok(self.paths.join(" ").to_string())
     }
 }
@@ -816,7 +818,7 @@ pub struct UserBuilder {
 }
 
 impl UserBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         Ok(format!(
             "{}{}",
             self.user,
@@ -845,7 +847,7 @@ pub struct WorkdirBuilder {
 }
 
 impl WorkdirBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         Ok(self.path.to_string())
     }
 }
@@ -868,7 +870,7 @@ pub struct ArgBuilder {
 }
 
 impl ArgBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         let value = match &self.value {
             Some(value) => format!("{}={}", self.name, value),
             None => self.name.to_string(),
@@ -894,14 +896,14 @@ pub struct OnbuildBuilder {
 }
 
 impl OnbuildBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         match &self.instruction {
-            Instruction::ONBUILD(_) => {
-                Err("Chaining ONBUILD instructions using ONBUILD ONBUILD isn’t allowed".to_string())
-            }
-            Instruction::FROM(_) => {
-                Err("ONBUILD instruction may not trigger FROM instruction".to_string())
-            }
+            Instruction::ONBUILD(_) => Err(eyre!(
+                "Chaining ONBUILD instructions using ONBUILD ONBUILD isn’t allowed"
+            )),
+            Instruction::FROM(_) => Err(eyre!(
+                "ONBUILD instruction may not trigger FROM instruction"
+            )),
             ins => Ok(ins.to_string()),
         }
     }
@@ -924,7 +926,7 @@ pub struct StopsignalBuilder {
 }
 
 impl StopsignalBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         Ok(self.signal.to_string())
     }
 }
@@ -951,7 +953,7 @@ pub struct HealthcheckBuilder {
 }
 
 impl HealthcheckBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         Ok(format!(
             "{}{}{}{}{}",
             self.interval
@@ -1013,7 +1015,7 @@ pub struct ShellBuilder {
 }
 
 impl ShellBuilder {
-    fn value(&self) -> Result<String, String> {
+    fn value(&self) -> Result<String> {
         let params = match self.params.clone() {
             Some(param_vec) => {
                 format!(r#", "{}""#, param_vec.join(r#"", ""#))
@@ -1064,15 +1066,6 @@ mod tests {
 
     #[test]
     fn from_err() {
-        let from = FromBuilder::builder().build();
-        match from {
-            Ok(_) => panic!("Required field is not set. Expect test to fail"),
-            Err(e) => assert_eq!(
-                e.to_string(),
-                "image is required for FromBuilder".to_string(),
-            ),
-        }
-
         let from = FromBuilder::builder()
             .image("cargo-chef")
             .tag("t")

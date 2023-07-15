@@ -154,8 +154,7 @@ pub fn instruction_builder(input: TokenStream) -> TokenStream {
 
         // Custom set method for Vec<String> or Option<Vec<String>
         // These methods can accept Vec<T> where T: Into<String> as argument.
-        if utils::is_type_vec_string(original_ty) || utils::is_type_option_vec_string(original_ty)
-        {
+        if utils::is_type_vec_string(original_ty) || utils::is_type_option_vec_string(original_ty) {
             return quote! {
                 pub fn #name<T: Into<String>>(&mut self, #name: Vec<T>) -> &mut Self {
                     let converted = #name.into_iter().map(|s| s.into()).collect::<Vec<String>>();
@@ -258,14 +257,16 @@ pub fn instruction_builder(input: TokenStream) -> TokenStream {
     let builder_check_build_field = fields.iter().map(|f| {
         let name = &f.ident;
         let ty = &f.ty;
+
         if utils::is_type("Option", ty) {
             quote! {
                 #name: self.#name.clone(),
             }
         } else {
             quote! {
-                #name: self.#name.clone()
-                    .ok_or(concat!(stringify!(#name), " is required for ", stringify!(#struct_ident)))?,
+                #name: self.#name.clone().ok_or(
+                    eyre::eyre!(concat!(stringify!(#name), " is required for ", stringify!(#struct_ident)))
+                )?,
             }
         }
     });
@@ -293,13 +294,13 @@ pub fn instruction_builder(input: TokenStream) -> TokenStream {
             #(#builder_set_method)*
             #(#builder_set_each_method)*
 
-            pub fn check_build(&mut self) -> eyre::Result<#struct_ident, String> {
+            fn check_build(&mut self) -> eyre::Result<#struct_ident> {
                 Ok(#struct_ident {
                     #(#builder_check_build_field)*
                 })
             }
 
-            pub fn build(&mut self) -> eyre::Result<#instruction_name, String> {
+            pub fn build(&mut self) -> eyre::Result<#instruction_name> {
                 let instruction_builder = self.check_build()?;
                 let value = instruction_builder.#value_method()?;
                 Ok(
