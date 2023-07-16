@@ -1,6 +1,6 @@
 [package]
 name = "dockerfile_builder_macros"
-version = "0.1.0"
+version = "0.1.3"
 edition = "2021"
 authors = ["Phuong Pham <ptmphuong9@gmail.com>"]
 description = "Private macro implemenation for dockerfile_builder"
