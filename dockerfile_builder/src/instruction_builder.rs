@@ -686,7 +686,7 @@ impl CopyBuilder {
                 .unwrap_or_default(),
             self.from
                 .as_ref()
-                .map(|c| format!("--chmod={} ", c))
+                .map(|c| format!("--from={} ", c))
                 .unwrap_or_default(),
             self.src,
             self.dest,
