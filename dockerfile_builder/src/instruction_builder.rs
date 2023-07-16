@@ -187,7 +187,9 @@ impl EnvBuilder {
 
 /// Builder struct for [`RUN`] instruction (shell form)
 ///
-/// `RunBuilder` constructs the shell form for [`RUN`] by default.
+/// * `RunBuilder` constructs the shell form for [`RUN`] by default.
+/// To construct the exec form of `RUN`, use [`RunExecBuilder`].
+///
 /// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#run):
 /// * `RUN command`
@@ -223,8 +225,6 @@ impl EnvBuilder {
 /// );
 /// ```
 ///
-/// To construct the exec form of `RUN`, use [`RunExecBuilder`]
-///
 /// [RUN]: dockerfile_builder::instruction::RUN
 // TODO: Flag options for RUN
 #[derive(Debug, InstructionBuilder)]
@@ -245,7 +245,9 @@ impl RunBuilder {
 
 /// Builder struct for [`RUN`] instruction (exec form)
 ///
-/// RunBuilder constructs the exec form for [`RUN`].
+/// * RunBuilder constructs the exec form for [`RUN`].
+/// To construct the shell form, use [`RunBuilder`].
+///
 /// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#run):
 /// * `RUN ["executable", "param1", "param2"]`
@@ -269,8 +271,6 @@ impl RunBuilder {
 /// assert_eq!(run.to_string(), r#"RUN ["mybin.exe", "-f", "-c"]"#);
 /// ```
 ///
-/// To construct the shell form, use [`RunBuilder`]
-///
 /// [RUN]: dockerfile_builder::instruction::RUN
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
@@ -285,17 +285,25 @@ pub struct RunExecBuilder {
 
 impl RunExecBuilder {
     fn value(&self) -> Result<String> {
-        Ok(format!(
-            r#"["{}", "{}"]"#,
-            self.executable,
-            self.params.clone().unwrap_or_default().join(r#"", ""#)
-        ))
+        let params = match self.params.clone() {
+            Some(param_vec) => {
+                if param_vec.is_empty() {
+                    String::new()
+                } else {
+                    format!(r#", "{}""#, param_vec.join(r#"", ""#))
+                }
+            }
+            None => String::new(),
+        };
+        Ok(format!(r#"["{}"{}]"#, self.executable, params))
     }
 }
 
 /// Builder struct for [`CMD`] instruction (shell form)
 ///
-/// CmdBuilder constructs the shell form for [`CMD`] by default.
+/// * CmdBuilder constructs the shell form for [`CMD`] by default.
+/// To construct the exec form or CMD in combination with ENTRYPOINT, use [`CmdExecBuilder`].
+///
 /// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#cmd):
 /// * `CMD command param1 param2`
@@ -319,8 +327,6 @@ impl RunExecBuilder {
 /// assert_eq!(cmd.to_string(), r#"CMD echo "this is a test" | wc -l"#);
 /// ```
 ///
-/// To construct the exec form or CMD in combination with ENTRYPOINT, use [`CmdExecBuilder`]
-///
 /// [CMD]: dockerfile_builder::instruction::CMD
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
@@ -335,17 +341,25 @@ pub struct CmdBuilder {
 
 impl CmdBuilder {
     fn value(&self) -> Result<String> {
-        Ok(format!(
-            "{} {}",
-            self.command,
-            self.params.clone().unwrap_or_default().join(" "),
-        ))
+        let params = match self.params.clone() {
+            Some(param_vec) => {
+                if param_vec.is_empty() {
+                    String::new()
+                } else {
+                    format!(r#" {}"#, param_vec.join(" "))
+                }
+            }
+            None => String::new(),
+        };
+        Ok(format!("{}{}", self.command, params))
     }
 }
 
 /// Builder struct for [`CMD`] instruction (exec form)
 ///
-/// CmdBuilder constructs the exec form for [`CMD`].
+/// * CmdBuilder constructs the exec form for [`CMD`].
+/// To construct the shell form, use [`CmdBuilder`].
+///
 /// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#cmd):
 /// * `CMD ["executable", "param1", "param2"]`
@@ -370,8 +384,6 @@ impl CmdBuilder {
 /// assert_eq!(cmd.to_string(), r#"CMD ["-l", "8000"]"#);
 /// ```
 ///
-/// To construct the shell form, use [`CmdBuilder`]
-///
 /// [CMD]: dockerfile_builder::instruction::CMD
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
@@ -389,13 +401,27 @@ impl CmdExecBuilder {
         if self.executable.is_none() && self.params.is_none() {
             return Err(eyre!("CMD cannot be empty"));
         }
+        let params = match self.params.clone() {
+            Some(param_vec) => {
+                if self.executable.is_none() && param_vec.is_empty() {
+                    return Err(eyre!("CMD cannot be empty"));
+                } else if param_vec.is_empty() {
+                    String::new()
+                } else if self.executable.is_none() {
+                    format!(r#""{}""#, param_vec.join(r#"", ""#))
+                } else {
+                    format!(r#", "{}""#, param_vec.join(r#"", ""#))
+                }
+            }
+            None => String::new(),
+        };
         Ok(format!(
-            r#"[{}"{}"]"#,
+            r#"[{}{}]"#,
             self.executable
                 .as_ref()
-                .map(|e| format!(r#""{}", "#, e))
+                .map(|e| format!(r#""{}""#, e))
                 .unwrap_or_default(),
-            self.params.clone().unwrap_or_default().join(r#"", ""#),
+            params,
         ))
     }
 }
@@ -670,7 +696,9 @@ impl CopyBuilder {
 
 /// Builder struct for [`ENTRYPOINT`] instruction (shell form)
 ///
-/// EntrypointBuilder constructs the shell form for [`ENTRYPOINT`] by default.
+/// * EntrypointBuilder constructs the shell form for [`ENTRYPOINT`] by default.
+/// To construct the exec form, use [`EntrypointExecBuilder`].
+///
 /// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#entrypoint):
 /// * `ENTRYPOINT command param1 param2`
@@ -694,8 +722,6 @@ impl CopyBuilder {
 /// assert_eq!(entrypoint.to_string(), "ENTRYPOINT some command -f -c");
 /// ```
 ///
-/// To construct the exec form, use [`EntrypointExecBuilder`]
-///
 /// [ENTRYPOINT]: dockerfile_builder::instruction::ENTRYPOINT
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
@@ -710,23 +736,26 @@ pub struct EntrypointBuilder {
 
 impl EntrypointBuilder {
     fn value(&self) -> Result<String> {
-        Ok(format!(
-            "{}{}",
-            self.command,
-            self.params
-                .clone()
-                .unwrap_or_default()
-                .iter()
-                .map(|p| format!(" {}", p))
-                .collect::<Vec<String>>()
-                .join(""),
-        ))
+        let params = match self.params.clone() {
+            Some(param_vec) => {
+                if param_vec.is_empty() {
+                    String::new()
+                } else {
+                    format!(r#" {}"#, param_vec.join(r#" "#))
+                }
+            }
+            None => String::new(),
+        };
+
+        Ok(format!("{}{}", self.command, params))
     }
 }
 
 /// Builder struct for [`ENTRYPOINT`] instruction (exec form)
 ///
-/// EntrypointExecBuilder constructs the exec form for [`ENTRYPOINT`].
+/// * EntrypointExecBuilder constructs the exec form for [`ENTRYPOINT`].
+/// To construct the shell form, use [`EntrypointBuilder`].
+///
 /// Format according to [Dockerfile
 /// reference](https://docs.docker.com/engine/reference/builder/#entrypoint):
 /// * `ENTRYPOINT ["executable", "param1", "param2"]`
@@ -750,8 +779,6 @@ impl EntrypointBuilder {
 /// assert_eq!(entrypoint.to_string(), r#"ENTRYPOINT ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]"#);
 /// ```
 ///
-/// To construct the shell form, use [`EntrypointBuilder`]
-///
 /// [ENTRYPOINT]: dockerfile_builder::instruction::ENTRYPOINT
 #[derive(Debug, InstructionBuilder)]
 #[instruction_builder(
@@ -768,7 +795,11 @@ impl EntrypointExecBuilder {
     fn value(&self) -> Result<String> {
         let params = match self.params.clone() {
             Some(param_vec) => {
-                format!(r#", "{}""#, param_vec.join(r#"", ""#))
+                if param_vec.is_empty() {
+                    String::new()
+                } else {
+                    format!(r#", "{}""#, param_vec.join(r#"", ""#))
+                }
             }
             None => String::new(),
         };
@@ -1018,7 +1049,11 @@ impl ShellBuilder {
     fn value(&self) -> Result<String> {
         let params = match self.params.clone() {
             Some(param_vec) => {
-                format!(r#", "{}""#, param_vec.join(r#"", ""#))
+                if param_vec.is_empty() {
+                    String::new()
+                } else {
+                    format!(r#", "{}""#, param_vec.join(r#"", ""#))
+                }
             }
             None => String::new(),
         };
@@ -1062,6 +1097,33 @@ mod tests {
             .unwrap();
         let expected = expect!["FROM cargo-chef@sha256 AS chef"];
         expected.assert_eq(&from.to_string());
+    }
+
+    #[test]
+    fn run() {
+        let run = RunExecBuilder::builder()
+            .executable("mybin.exe")
+            .build()
+            .unwrap();
+        let expected = expect![r#"RUN ["mybin.exe"]"#];
+        expected.assert_eq(&run.to_string());
+    }
+
+    #[test]
+    fn cmd() {
+        let cmd = CmdBuilder::builder()
+            .command("some command")
+            .build()
+            .unwrap();
+        let expected = expect!["CMD some command"];
+        expected.assert_eq(&cmd.to_string());
+
+        let cmd = CmdExecBuilder::builder()
+            .executable("some command")
+            .build()
+            .unwrap();
+        let expected = expect![r#"CMD ["some command"]"#];
+        expected.assert_eq(&cmd.to_string());
     }
 
     #[test]
@@ -1134,6 +1196,31 @@ mod tests {
             .unwrap();
         let expected = expect!["COPY --link foo/ bar/"];
         expected.assert_eq(&copy.to_string());
+    }
+
+    #[test]
+    fn entrypoint() {
+        let entrypoint = EntrypointBuilder::builder()
+            .command("some command")
+            .build()
+            .unwrap();
+        let expected = expect![r#"ENTRYPOINT some command"#];
+        expected.assert_eq(&entrypoint.to_string());
+
+        let entrypoint = EntrypointExecBuilder::builder()
+            .executable("mybin.exe")
+            .build()
+            .unwrap();
+        let expected = expect![r#"ENTRYPOINT ["mybin.exe"]"#];
+        expected.assert_eq(&entrypoint.to_string());
+
+        let entrypoint = EntrypointExecBuilder::builder()
+            .executable("top")
+            .param("-b")
+            .build()
+            .unwrap();
+        let expected = expect![r#"ENTRYPOINT ["top", "-b"]"#];
+        expected.assert_eq(&entrypoint.to_string());
     }
 
     #[test]
