@@ -15,11 +15,11 @@
 //!let dockerfile = Dockerfile::default()
 //!    .push(RUN::from("echo $HOME"))
 //!    .push(EXPOSE::from("80/tcp"))
-//!    .push_any("Just adding a comment");
+//!    .push_any("# Just adding a comment");
 //!    
-//!let expected = r"RUN echo $HOME
+//!let expected = r#"RUN echo $HOME
 //!EXPOSE 80/tcp
-//!Just adding a comment";
+//!## Just adding a comment"#;
 //!
 //!assert_eq!(
 //!    dockerfile.to_string(),
@@ -114,6 +114,11 @@ impl Dockerfile {
     /// Adds `escape` data to the end of the Dockerfile
     pub fn escape<T: Into<String>>(self, escape: T) -> Self {
         self.push_any(format!("# escape={}", escape.into()))
+    }
+
+    /// Adds a comment to the end of the Dockerfile
+    pub fn comment<T: Into<String>>(self, comment: T) -> Self {
+        self.push_any(format!("# {}", comment.into()))
     }
 
     /// Retrieves [`Instruction`] vec from Dockerfile
