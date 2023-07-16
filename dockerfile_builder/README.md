@@ -1,3 +1,7 @@
+[![Documentation](https://docs.rs/dockerfile_builder/badge.svg)](https://docs.rs/dockerfile_builder/latest/dockerfile_builder/)
+[![Crates.io](https://img.shields.io/crates/v/dockerfile_builder.svg)](https://crates.io/crates/dockerfile_builder)
+[![Crates.io](https://img.shields.io/crates/d/dockerfile_builder.svg)](https://crates.io/crates/dockerfile_builder)
+
 This library provides a convenient way to programmatically generate Dockerfiles using Rust.
 
 Dockerfiles instructions can be generated using structured and type-safe interfaces, or they can be added flexibly in raw form.
@@ -6,7 +10,7 @@ Dockerfiles instructions can be generated using structured and type-safe interfa
 
 ```toml
 [dependencies]
-dockerfile_builder = "0.1.0"
+dockerfile_builder = "0.1.3"
 ```
 
 ```rust
