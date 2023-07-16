@@ -239,7 +239,7 @@ pub struct RunBuilder {
 
 impl RunBuilder {
     fn value(&self) -> Result<String> {
-        Ok(self.commands.join(" && \\\n").to_string())
+        Ok(self.commands.join(" && \\\n"))
     }
 }
 
@@ -761,16 +761,18 @@ impl EntrypointBuilder {
 pub struct EntrypointExecBuilder {
     pub executable: String,
     #[instruction_builder(each = param)]
-    pub params: Vec<String>,
+    pub params: Option<Vec<String>>,
 }
 
 impl EntrypointExecBuilder {
     fn value(&self) -> Result<String> {
-        Ok(format!(
-            r#"["{}", "{}"]"#,
-            self.executable,
-            self.params.join(r#"", ""#),
-        ))
+        let params = match self.params.clone() {
+            Some(param_vec) => {
+                format!(r#", "{}""#, param_vec.join(r#"", ""#))
+            }
+            None => String::new(),
+        };
+        Ok(format!(r#"["{}"{}]"#, self.executable, params))
     }
 }
 
@@ -793,7 +795,7 @@ pub struct VolumeBuilder {
 
 impl VolumeBuilder {
     fn value(&self) -> Result<String> {
-        Ok(self.paths.join(" ").to_string())
+        Ok(self.paths.join(" "))
     }
 }
 
