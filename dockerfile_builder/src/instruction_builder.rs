@@ -62,8 +62,7 @@
 //!     .unwrap();
 //! assert_eq!(
 //!     run.to_string(),
-//!     r#"RUN source $HOME/.bashrc && \
-//!echo $HOME"#,
+//!     "RUN source $HOME/.bashrc && echo $HOME",
 //! );
 //! ```
 //!
@@ -203,15 +202,14 @@ impl EnvBuilder {
 ///     .build().unwrap();
 /// assert_eq!(run.to_string(), "RUN source $HOME/.bashrc");
 ///
-/// // build RUN with multiple commands, commands are separated by `&& \`
+/// // build RUN with multiple commands, commands are separated by ` && `
 /// let run = RunBuilder::builder()
 ///     .command("source $HOME/.bashrc")
 ///     .command("echo $HOME")
 ///     .build().unwrap();
 /// assert_eq!(
 ///     run.to_string(),
-///     r#"RUN source $HOME/.bashrc && \
-///echo $HOME"#,
+///     "RUN source $HOME/.bashrc && echo $HOME",
 /// );
 ///
 /// // build RUN with multiple commands using a Vec
@@ -220,8 +218,7 @@ impl EnvBuilder {
 ///     .build().unwrap();
 /// assert_eq!(
 ///     run.to_string(),
-///     r#"RUN source $HOME/.bashrc && \
-///echo $HOME"#,
+///     "RUN source $HOME/.bashrc && echo $HOME",
 /// );
 /// ```
 ///
@@ -239,7 +236,7 @@ pub struct RunBuilder {
 
 impl RunBuilder {
     fn value(&self) -> Result<String> {
-        Ok(self.commands.join(" && \\\n"))
+        Ok(self.commands.join(" && "))
     }
 }
 
