@@ -10,7 +10,7 @@ Dockerfiles instructions can be generated using structured and type-safe interfa
 
 ```toml
 [dependencies]
-dockerfile_builder = "0.1.3"
+dockerfile_builder = "0.1.4"
 ```
 
 ```rust

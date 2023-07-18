@@ -1,6 +1,6 @@
 [package]
 name = "dockerfile_builder"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 description = "Flexible Dockerfile builder with type-safe features"
 keywords = ["docker", "dockerfile", "dockerfile-builder", "dockerfile-generator"]
@@ -9,7 +9,7 @@ repository = "https://github.com/ptmphuong/dockerfile-builder/"
 authors = ["Phuong Pham <ptmphuong9@gmail.com>"]
 
 [dependencies]
-dockerfile_builder_macros = "0.1.0"
+dockerfile_builder_macros = "0.1.3"
 eyre = "0.6.8"
 
 [dev-dependencies]
