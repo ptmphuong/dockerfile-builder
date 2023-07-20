@@ -44,7 +44,7 @@ use dockerfile_builder::Dockerfile;
 use dockerfile_builder::instruction::EXPOSE;
 use dockerfile_builder::instruction_builder::ExposeBuilder;
 
-fn main() -> eyre::Result<()) {
+fn main() -> eyre::Result<()> {
     let expose = EXPOSE::from("80/tcp");
     
     let expose_from_builder = ExposeBuilder::builder()
